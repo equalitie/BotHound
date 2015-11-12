@@ -9,7 +9,7 @@ import sys
 import threading
 
 import hashlib
-
+from crypto import decrypt
 
 import zmq
 from zmq.eventloop import ioloop, zmqstream
@@ -27,17 +27,22 @@ class LogFetcher(threading.Thread):
         threading.Thread.__init__(self)
         subscriber.on_recv(self.subscription)
         self.loop = ioloop.IOLoop.instance()
-        passphrase = 'writeapassphrase'
+        passphrase = 'drawnandquarterly'
         key = hashlib.sha256(passphrase)
         self.hashed_key = key.digest()
-        print self.hashed_key
+        print ord(self.hashed_key[0])
 
     def subscription(self, zmq_message):
         action, encrypted_message = zmq_message;
-
         #decrypt the message here
+        zmq_iv = zmq_message[0:12]
+        zmq_cipher = zmq_message[12:-16] 
+        zmq_tag = zmq_message[-16:]        
+        zmq_decrypted = decrypt(self.hashed_key, "", zmq_iv, zmq_cipher, zmq_tag)
+        print zmq_decrypted
         
-        
+        message = zmq_decrypted.split(',') 
+                
         action, ipaddress = message[0:2]
 
         ipaddress = ipaddress.strip()
