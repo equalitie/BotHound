@@ -11,7 +11,7 @@ hashed_key = hashlib.sha256(b'writeapassphrase')
 other_digest = hashed_key.digest()
 print other_digest
 
-def encrypt(other_digest, plaintext, associated_data):
+def encrypt(key, plaintext, associated_data):
     # Generate a random 96-bit IV.
     iv = os.urandom(12)
 
@@ -34,7 +34,7 @@ def encrypt(other_digest, plaintext, associated_data):
 
     return (iv, ciphertext, encryptor.tag)
   
-def decrypt(other_digest, associated_data, iv, ciphertext, tag):
+def decrypt(key, associated_data, iv, ciphertext, tag):
     # Construct a Cipher object, with the key, iv, and additionally the
     # GCM tag used for authenticating the message.
     decryptor = Cipher(
