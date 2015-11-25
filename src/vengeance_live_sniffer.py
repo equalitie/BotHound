@@ -31,6 +31,7 @@ class VengeanceLiveSniffer(LogFetcher):
 
     pre_anomaly_history = 10 * 60 #seconds
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
+    
     def __init__(self):
         """
         Calls the parent constructor then initializes a ip_dictionary
@@ -43,8 +44,9 @@ class VengeanceLiveSniffer(LogFetcher):
         action message[0]
 
         if (action = BOTBANGER_LOG):
-            return process
-        else if
+            return process_botbanger_log(message[1:])
+        else if (action = GREYMEMORY_INFO):
+            return process_greymemory_info(message[1:])
 
     def _process_botbanger_log(self, message):
         ipaddress = message[0]
@@ -68,6 +70,8 @@ class VengeanceLiveSniffer(LogFetcher):
         cur_log_rec["size"] = (not message[6]) and '0' or message[6]
         cur_log_rec["agent"] = message[7]
         cur_log_rec["hit"] = message[8]
+
+        _gather_all_features(cur_log_rec)
 
     def _process_grey_memory_info(self, message):
         """
