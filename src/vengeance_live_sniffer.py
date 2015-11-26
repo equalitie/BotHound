@@ -13,7 +13,7 @@ import logging
 
 #Learn to ban modules
 from features.src import *
-from ip_sieve import IPSieve, ATSRecord
+from ats_record import ATSRecord
 from logfetcher import LogFetcher
 
 from collections import OrderedDict
@@ -28,7 +28,6 @@ class VengeanceLiveSniffer(LogFetcher):
     to clusterify after each log (for now) till greymemory says
     normal
     """
-
     pre_anomaly_history = 10 * 60 #seconds
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
     
@@ -41,11 +40,11 @@ class VengeanceLiveSniffer(LogFetcher):
         self._log_rec_counter = 0
         
     def process_received_message(self, message):
-        action message[0]
+        action = message[0]
 
-        if (action = BOTBANGER_LOG):
+        if (action == BOTBANGER_LOG):
             return process_botbanger_log(message[1:])
-        else if (action = GREYMEMORY_INFO):
+        elif (action == GREYMEMORY_INFO):
             return process_greymemory_info(message[1:])
 
     def _process_botbanger_log(self, message):
@@ -106,17 +105,22 @@ class VengeanceLiveSniffer(LogFetcher):
             self._ip_log_db[cur_ip].append(cur_ats_rec)
         
         self._ip_sieve.set_pre_seived_order_records(dict(((cur_ip, self._ip_log_db[cur_ip]),)))
-        
+
+        #so this is stupid we should compute accumulatively
+        #instead so ip_feature_db should be the member of
+        #the class, it probably should be a training set
         ip_feature_db = {}
         for cur_feature_name in self._feature_list:
             cur_feature_tester = self._available_features[cur_feature_name](self._ip_sieve, ip_feature_db)
             cur_feature_tester.compute()
 
-        print ip_feature_db
-        return ip_feature_db
-      
+        #print ip_feature_db
+        #turing ip_feature_db into a numpy array
+        ip_feautre_array = np_array([[ip_feature_db[ip][feature] for feature in range(0, len(self._feature_list))] for ip in ip_feautre_db])
+        
+        return ip_feature_array
 
-    def _clusterify(is_this_a_bot(self, cur_rec_dict):
+    def _clusterify(self, cur_rec_dict):
         """
         Gets an ATS record and add the rec to the log database. Then re-compute the
         features and call the classifier to rejudge the ip.
@@ -131,23 +135,7 @@ class VengeanceLiveSniffer(LogFetcher):
         #train2ban and botsniffer using TrainingSet but for now
         #we go with the simple just hack solution
         
-        ip_feautre_db = self._gather_all_features(cur_rec_dict)
-        
-        for line in file:
-                    splitted_line = line.split(') {')
-
-                    useful_part = splitted_line[1]
-                    useful_part = useful_part[:-2]
-                    new_split = useful_part.split(', ')
-
-                    num_list =[]   
-                    for b in new_split:
-                    c = b.split(': ')[1]
-                    num_list.append(float(c))
-                    empty_list.append(num_list) 
-
-                    A = np.array(empty_list)
-
+        ip_feautre_array = self._gather_all_features(cur_rec_dict)
 
         for no_of_clusters in range(2,20):
             kmeans = KMeans(n_clusters=no_of_clusters)
@@ -156,8 +144,8 @@ class VengeanceLiveSniffer(LogFetcher):
             j = [0]*no_of_clusters
                     
             for i in kmeans.predict(A): 
-            j[i] = j[i]+1
+                j[i] = j[i]+1
 
             print j
 
-            return len(self._predict_failure(self._gather_all_features(cur_rec_dict))) > 0
+        return True

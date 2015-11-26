@@ -55,7 +55,7 @@ def main():
         logger.addHandler(hdlr)
         logger.setLevel(logging.DEBUG)
 
-    lfetcher = VengeanceLiveSniffer(options.bindstrings, option.logtags, options.conffile, options.verbose)
+    lfetcher = VengeanceLiveSniffer(options.bindstrings, options.conffile, options.verbose)
     lfetcher.run()
 
 if __name__ == "__main__":

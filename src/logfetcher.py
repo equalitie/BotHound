@@ -18,10 +18,13 @@ class LogFetcher(threading.Thread):
 
     def __init__(self, bindstrings, conf_file, verbose=False):
         #TODO: can the context be shared, what about subscriber
+        self.BOTBANGER_LOG = "botbanger_log" #class constants don't
+        #survive inheritance
+
         context = zmq.Context()
         self.socket = context.socket(zmq.SUB)
         subscriber = zmqstream.ZMQStream(self.socket)
-        self.socket.setsockopt(zmq.SUBSCRIBE, BOTBANGER_LOG)
+        self.socket.setsockopt(zmq.SUBSCRIBE, self.BOTBANGER_LOG)
         self.socket.connect(bindstrings)
         threading.Thread.__init__(self)
         subscriber.on_recv(self.subscription)
