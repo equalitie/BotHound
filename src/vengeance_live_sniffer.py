@@ -32,15 +32,15 @@ class VengeanceLiveSniffer(LogFetcher):
     pre_anomaly_history = 10 * 60 #seconds
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
     
-    def __init__(self):
+    def __init__(self, bindstrings, conf_file, verbose=False):
         """
         Calls the parent constructor then initializes a ip_dictionary
         """
-        super(VengeanceLiveSniffer, self).__init__()
+        super(VengeanceLiveSniffer, self).__init__(bindstrings, conf_file, verbose)
         self._ip_log_db = OrderedDict()
         self._log_rec_counter = 0
         
-    def process_incoming_logs(self, message):
+    def process_received_message(self, message):
         action message[0]
 
         if (action = BOTBANGER_LOG):
@@ -71,12 +71,13 @@ class VengeanceLiveSniffer(LogFetcher):
         cur_log_rec["agent"] = message[7]
         cur_log_rec["hit"] = message[8]
 
-        _gather_all_features(cur_log_rec)
+        return self._clusterify(cur_log_rec)
 
     def _process_grey_memory_info(self, message):
         """
         Follow the github
         """
+        pass
 
     def _gather_all_features(self, cur_rec_dict):
         """
@@ -113,6 +114,7 @@ class VengeanceLiveSniffer(LogFetcher):
 
         print ip_feature_db
         return ip_feature_db
+      
 
     def _clusterify(is_this_a_bot(self, cur_rec_dict):
         """
@@ -128,7 +130,9 @@ class VengeanceLiveSniffer(LogFetcher):
         #We need to turn ip_table to numpy array as it done in
         #train2ban and botsniffer using TrainingSet but for now
         #we go with the simple just hack solution
-
+        
+        ip_feautre_db = self._gather_all_features(cur_rec_dict)
+        
         for line in file:
                     splitted_line = line.split(') {')
 
