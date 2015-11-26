@@ -114,7 +114,7 @@ class VengeanceLiveSniffer(LogFetcher):
         print ip_feature_db
         return ip_feature_db
 
-    def is_this_a_bot(self, cur_rec_dict):
+    def _clusterify(is_this_a_bot(self, cur_rec_dict):
         """
         Gets an ATS record and add the rec to the log database. Then re-compute the
         features and call the classifier to rejudge the ip.
@@ -123,4 +123,37 @@ class VengeanceLiveSniffer(LogFetcher):
             ats_record: the record of the new request to ats
         
         """
-        return len(self._predict_failure(self._gather_all_features(cur_rec_dict))) > 0
+        from sklearn.cluster import KMeans
+
+        #We need to turn ip_table to numpy array as it done in
+        #train2ban and botsniffer using TrainingSet but for now
+        #we go with the simple just hack solution
+
+        for line in file:
+                    splitted_line = line.split(') {')
+
+                    useful_part = splitted_line[1]
+                    useful_part = useful_part[:-2]
+                    new_split = useful_part.split(', ')
+
+                    num_list =[]   
+                    for b in new_split:
+                    c = b.split(': ')[1]
+                    num_list.append(float(c))
+                    empty_list.append(num_list) 
+
+                    A = np.array(empty_list)
+
+
+        for no_of_clusters in range(2,20):
+            kmeans = KMeans(n_clusters=no_of_clusters)
+            kmeans.fit(A)
+                    
+            j = [0]*no_of_clusters
+                    
+            for i in kmeans.predict(A): 
+            j[i] = j[i]+1
+
+            print j
+
+            return len(self._predict_failure(self._gather_all_features(cur_rec_dict))) > 0
