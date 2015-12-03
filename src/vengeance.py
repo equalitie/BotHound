@@ -17,9 +17,6 @@ def main():
                       default="tcp://127.0.0.1:22621",
                       help="URI(s) to bind to, if more than one should be comma separated")
                       
-                      # add a -T for the grey memory info
-                      # add a new variable 
-                      # 
     parser.add_option("-T", "--logtags",
                       action="store", dest="logtags",
                       default="botbanger_log",
