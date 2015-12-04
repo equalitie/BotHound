@@ -10,6 +10,7 @@ AUTHORS: vmon, ludost (C) Equalit.ie Nov 2015: Initial version
 
 """
 import logging
+import numpy
 
 #Learn to ban modules
 from features.src import *
