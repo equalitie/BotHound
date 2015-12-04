@@ -7,7 +7,6 @@ import optparse
 import re
 import sys
 import threading
-import pdb
 
 import hashlib
 from crypto import decrypt
@@ -19,8 +18,9 @@ class LogFetcher(threading.Thread):
 
     def __init__(self, bindstrings, conf_file, verbose=False):
         #TODO: can the context be shared, what about subscriber
-        self.BOTBANGER_LOG = "botbanger_log" #class constants don't
+        self.BOTBANGER_LOG = "botbanger_log" #class constants don't        
         #survive inheritance
+        self.GREYMEMORY_INFO = "greymemory_info"
 
         context = zmq.Context()
         self.socket = context.socket(zmq.SUB)
@@ -38,20 +38,19 @@ class LogFetcher(threading.Thread):
     def subscription(self, zmq_message):
         action, encrypted_message = zmq_message;
         #decrypt the message here
-        pdb.set_trace()
-        zmq_iv = zmq_message[0:12]
-        zmq_cipher = zmq_message[12:-16] 
-        zmq_tag = zmq_message[-16:]        
+        zmq_iv = encrypted_message[0:12]
+        zmq_cipher = encrypted_message[12:-16] 
+        zmq_tag = encrypted_message[-16:]        
         zmq_decrypted = decrypt(self.hashed_key, "", zmq_iv, zmq_cipher, zmq_tag)
         print zmq_decrypted
         
         message = zmq_decrypted.split(',') 
                 
-        return process_received_message(self, message);
+        return self.process_received_message(action, message);
 
-    def process_received_message(self, message):
+    def process_received_message(self, action, message):
         print message
-        
+
         #do something with the log here                    
         pass
 

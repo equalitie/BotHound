@@ -11,6 +11,9 @@ AUTHORS: vmon, ludost (C) Equalit.ie Nov 2015: Initial version
 """
 import logging
 import numpy
+import re
+import sklearn
+import pdb 
 
 #Learn to ban modules
 from features.src import *
@@ -40,17 +43,15 @@ class VengeanceLiveSniffer(LogFetcher):
         self._ip_log_db = OrderedDict()
         self._log_rec_counter = 0
         
-    def process_received_message(self, message):
-        action = message[0]
+    def process_received_message(self, action, message):
+        if (action == self.BOTBANGER_LOG):
+            return self._process_botbanger_log(message)
+        elif (action == self.GREYMEMORY_INFO):
+            return self._process_greymemory_info(message)
 
-        if (action == BOTBANGER_LOG):
-            return process_botbanger_log(message[1:])
-        elif (action == GREYMEMORY_INFO):
-            return process_greymemory_info(message[1:])
-
-    def _process_botbanger_log(self, message):
+    def _process_botbanger_log(self, message):       
         ipaddress = message[0]
-
+        
         ipaddress = ipaddress.strip()
         ipmatch = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
         if not ipmatch.match(ipaddress):
@@ -62,14 +63,14 @@ class VengeanceLiveSniffer(LogFetcher):
         logging.debug("log is: %s", message)
 
         cur_log_rec = {}
-        cur_log_rec["host"] = message[1]
-        cur_log_rec["time"] = message[2]
-        cur_log_rec["request"] = message[3]
-        cur_log_rec["type"] = message[4]
-        cur_log_rec["status"] = message[5]
-        cur_log_rec["size"] = (not message[6]) and '0' or message[6]
-        cur_log_rec["agent"] = message[7]
-        cur_log_rec["hit"] = message[8]
+        cur_log_rec["host"] = message[0]
+        cur_log_rec["time"] = message[1]
+        cur_log_rec["request"] = message[2]
+        cur_log_rec["type"] = message[3]
+        cur_log_rec["status"] = message[4]
+        cur_log_rec["size"] = (not message[5]) and '0' or message[5]
+        cur_log_rec["agent"] = message[6]
+        cur_log_rec["hit"] = message[7]
 
         return self._clusterify(cur_log_rec)
 
@@ -130,6 +131,7 @@ class VengeanceLiveSniffer(LogFetcher):
             ats_record: the record of the new request to ats
         
         """
+        pdb.set_trace()
         from sklearn.cluster import KMeans
 
         #We need to turn ip_table to numpy array as it done in
