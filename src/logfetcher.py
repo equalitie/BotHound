@@ -7,6 +7,7 @@ import optparse
 import re
 import sys
 import threading
+import pdb
 
 import hashlib
 from crypto import decrypt
@@ -37,6 +38,7 @@ class LogFetcher(threading.Thread):
     def subscription(self, zmq_message):
         action, encrypted_message = zmq_message;
         #decrypt the message here
+        pdb.set_trace()
         zmq_iv = zmq_message[0:12]
         zmq_cipher = zmq_message[12:-16] 
         zmq_tag = zmq_message[-16:]        
