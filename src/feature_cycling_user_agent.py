@@ -10,11 +10,11 @@ AUTHORS::
 from learn2ban_feature import Learn2BanFeature
 import operator
 class FeatureCyclingUserAgent(Learn2BanFeature):
-    def __init__(self, ip_sieve, ip_feature_db):
+    def __init__(self, ip_recs, ip_feature_db):
         """
         Simply calls the parent constructor
         """
-        Learn2BanFeature.__init__(self, ip_sieve, ip_feature_db)
+        Learn2BanFeature.__init__(self, ip_recs, ip_feature_db)
         
         #Each feature need to have unique index as the field number
         #in ip_feature_db
@@ -26,7 +26,7 @@ class FeatureCyclingUserAgent(Learn2BanFeature):
         retrieve the ip dictionary and compute the average for each 
         ip to determine the change rate of UA per IP.
         """
-        ip_recs = self._ip_sieve.ordered_records()
+        ip_recs = self._ip_recs
 
         for cur_ip_rec in ip_recs:
             ua_request_map = {}

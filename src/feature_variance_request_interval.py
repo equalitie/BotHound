@@ -17,11 +17,11 @@ from learn2ban_feature import Learn2BanFeature
 import numpy as np
 
 class FeatureVarianceRequestInterval(Learn2BanFeature):
-    def __init__(self, ip_sieve, ip_feature_db):
+    def __init__(self, ip_recs, ip_feature_db):
         """
         Simply calls the parent constructor
         """
-        Learn2BanFeature.__init__(self, ip_sieve, ip_feature_db)
+        Learn2BanFeature.__init__(self, ip_recs, ip_feature_db)
         
         #Each feature need to have unique index as the field number
         #in ip_feature_db
@@ -42,7 +42,7 @@ class FeatureVarianceRequestInterval(Learn2BanFeature):
         the old calculation which is very reasonable requirement. We should
         move to that model soon.
         """
-        ip_recs = self._ip_sieve.ordered_records()
+        ip_recs = self._ip_recs
 
         for cur_ip_rec in ip_recs:
             sample_size = len(ip_recs[cur_ip_rec]) - 1

@@ -16,16 +16,16 @@ class Learn2BanFeature(object):
     __subclass__)
     """
     MAX_IDEAL_SESSION_LENGTH = 1800 #seconds
-    def __init__(self, ip_sieve, ip_feature_db):
+    def __init__(self, ip_recs, ip_feature_db):
         """
-        Set the corresponding ip_sieve
+        Get ip_recs
 
         INPUT::
-           ip_sieve: the IPSieve object to crunch the ATS log file
+           ip_recs: the ordered records of the IPs crunched
            ip_feature_db: the global db that store all features of
                           all ips
         """
-        self._ip_sieve = ip_sieve
+        self._ip_recs = ip_recs
         self._ip_feature_db = ip_feature_db
 
         self._FEATURE_INDEX = -1 #This is an abstract class so no real feature

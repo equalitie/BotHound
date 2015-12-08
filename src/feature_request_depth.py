@@ -10,11 +10,11 @@ AUTHORS::
 from learn2ban_feature import Learn2BanFeature
 import operator
 class FeatureRequestDepth(Learn2BanFeature):
-    def __init__(self, ip_sieve, ip_feature_db):
+    def __init__(self, ip_recs, ip_feature_db):
         """
         Simply calls the parent constructor
         """
-        Learn2BanFeature.__init__(self, ip_sieve, ip_feature_db)
+        Learn2BanFeature.__init__(self, ip_recs, ip_feature_db)
 
         #Each feature need to have unique index as the field number
         #in ip_feature_db
@@ -32,7 +32,7 @@ class FeatureRequestDepth(Learn2BanFeature):
         #Beside: I feel that wasn't the original intent, the original
         #intent is that in a website how many time you need to click to
         #reach that page which is not obtainable form the logs
-        ip_recs = self._ip_sieve.ordered_records()
+        ip_recs = self._ip_recs
 
         for cur_ip_rec in ip_recs:
             total_page_depth = 0
