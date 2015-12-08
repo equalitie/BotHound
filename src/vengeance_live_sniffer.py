@@ -35,11 +35,11 @@ class VengeanceLiveSniffer(LogFetcher):
     pre_anomaly_history = 10 * 60 #seconds
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
     
-    def __init__(self, bindstrings, conf_file, verbose=False):
+    def __init__(self, bindstrings, passphrase, conf_file, verbose=False):
         """
         Calls the parent constructor then initializes a ip_dictionary
         """
-        super(VengeanceLiveSniffer, self).__init__(bindstrings, conf_file, verbose)
+        super(VengeanceLiveSniffer, self).__init__(bindstrings, passphrase, conf_file, verbose)
         self._ip_log_db = OrderedDict()
         self._log_rec_counter = 0
         
@@ -49,28 +49,38 @@ class VengeanceLiveSniffer(LogFetcher):
         elif (action == self.GREYMEMORY_INFO):
             return self._process_greymemory_info(message)
 
-    def _process_botbanger_log(self, message):       
-        ipaddress = message[0]
-        
-        ipaddress = ipaddress.strip()
-        ipmatch = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-        if not ipmatch.match(ipaddress):
-            logging.error("Failed to validate IP address %s - rejecting",
-                              ipaddress)
+    def _process_botbanger_log(self, message):
+        try:
+            #we need to decode them from b64
+            for i in range(0, len(message)):
+                message[i] = message[i].decode('base64')
+
+            ipaddress = message[0]
+                
+            ipaddress = ipaddress.strip()
+            ipmatch = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+            if not ipmatch.match(ipaddress):
+                logging.error("Failed to validate IP address %s - rejecting",
+                                  ipaddress)
+                return False
+
+            logging.debug("Received log for ip = %s", ipaddress)
+            logging.debug("log is: %s", message)
+
+            cur_log_rec = {}
+            cur_log_rec["host"] = message[0]
+            cur_log_rec["time"] = message[1]
+            cur_log_rec["request"] = message[2]
+            cur_log_rec["type"] = message[3]
+            cur_log_rec["status"] = message[4]
+            cur_log_rec["size"] = (not message[5]) and '0' or message[5]
+            cur_log_rec["agent"] = message[6]
+            cur_log_rec["hit"] = message[7]
+                
+        except:
+            logging.error("Failed to decode the botbanger message")
             return False
-
-        logging.debug("Received log for ip = %s", message[1])
-        logging.debug("log is: %s", message)
-
-        cur_log_rec = {}
-        cur_log_rec["host"] = message[0]
-        cur_log_rec["time"] = message[1]
-        cur_log_rec["request"] = message[2]
-        cur_log_rec["type"] = message[3]
-        cur_log_rec["status"] = message[4]
-        cur_log_rec["size"] = (not message[5]) and '0' or message[5]
-        cur_log_rec["agent"] = message[6]
-        cur_log_rec["hit"] = message[7]
+            
 
         return self._clusterify(cur_log_rec)
 
@@ -131,6 +141,7 @@ class VengeanceLiveSniffer(LogFetcher):
             ats_record: the record of the new request to ats
         
         """
+        return False
         pdb.set_trace()
         from sklearn.cluster import KMeans
 

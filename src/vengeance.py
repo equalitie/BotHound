@@ -3,6 +3,7 @@ import optparse
 import re
 import sys
 import threading
+import pdb
 
 from vengeance_live_sniffer import VengeanceLiveSniffer
 
@@ -17,6 +18,12 @@ def main():
                       default="tcp://127.0.0.1:22621",
                       help="URI(s) to bind to, if more than one should be comma separated")
                       
+    parser.add_option("-P", "--passphrase",
+                      action="store", dest="passphrase",
+                      default="drawnandquarterly",
+                      help="reads the key from command line")
+
+
     parser.add_option("-T", "--logtags",
                       action="store", dest="logtags",
                       default="botbanger_log",
@@ -52,7 +59,7 @@ def main():
         logger.addHandler(hdlr)
         logger.setLevel(logging.DEBUG)
 
-    lfetcher = VengeanceLiveSniffer(options.bindstrings, options.conffile, options.verbose)
+    lfetcher = VengeanceLiveSniffer(options.bindstrings, options.passphrase, options.conffile, options.verbose)
     lfetcher.run()
 
 if __name__ == "__main__":

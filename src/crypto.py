@@ -9,7 +9,7 @@ import hashlib
 key = 'writeapassphrase'
 hashed_key = hashlib.sha256(b'writeapassphrase')
 other_digest = hashed_key.digest()
-print other_digest
+#print other_digest
 
 def encrypt(key, plaintext, associated_data):
     # Generate a random 96-bit IV.
@@ -63,7 +63,7 @@ encrypted_message = encrypt(
     b"authenticated but not encrypted payload"
 )   
 
-print encrypted_message 
+#print encrypted_message 
 
 decrypted_msg = decrypt(
     other_digest,
@@ -73,4 +73,4 @@ decrypted_msg = decrypt(
     tag
 )
 
-print decrypted_msg
+#print decrypted_msg
