@@ -10,11 +10,11 @@ AUTHORS::
 from learn2ban_feature import Learn2BanFeature
 
 class FeatureSessionLength(Learn2BanFeature):
-    def __init__(self, ip_sieve, ip_feature_db):
+    def __init__(self, ip_recs, ip_feature_db):
         """
         Simply calls the parent constructor
         """
-        Learn2BanFeature.__init__(self, ip_sieve, ip_feature_db)
+        Learn2BanFeature.__init__(self, ip_recs, ip_feature_db)
 
         #Each feature need to have unique index as the field number
         #in ip_feature_db
@@ -26,7 +26,7 @@ class FeatureSessionLength(Learn2BanFeature):
         retrieve the ip dictionary and compute the average for each
         ip. This is basically the time of the last request  - first.
         """
-        ip_recs = self._ip_sieve.ordered_records()
+        ip_recs = self._ip_recs
 
         for cur_ip_rec in ip_recs:
             feature_value = (len(ip_recs[cur_ip_rec]) > 1) and (ip_recs[cur_ip_rec][-1].time_to_second() - ip_recs[cur_ip_rec][0].time_to_second()) or 0
