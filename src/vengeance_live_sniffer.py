@@ -10,13 +10,14 @@ AUTHORS: vmon, ludost (C) Equalit.ie Nov 2015: Initial version
 
 """
 import logging
-import numpy
+import numpy as np
 import re
 import sklearn
 import pdb 
 
 #Learn to ban modules
 from features.src import *
+from features.src.learn2ban_feature import Learn2BanFeature
 from ats_record import ATSRecord
 from logfetcher import LogFetcher
 
@@ -34,6 +35,7 @@ class VengeanceLiveSniffer(LogFetcher):
     """
     pre_anomaly_history = 10 * 60 #seconds
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
+    DEAD_SESSION_PAUSE = 10*60*3 #minimum number of seconds between two session
     
     def __init__(self, bindstrings, passphrase, conf_file, verbose=False):
         """
@@ -41,8 +43,24 @@ class VengeanceLiveSniffer(LogFetcher):
         """
         super(VengeanceLiveSniffer, self).__init__(bindstrings, passphrase, conf_file, verbose)
         self._ip_log_db = OrderedDict()
+        self.ip_row_tracker = {}
+        self.ip_feature_array = np.array([])
         self._log_rec_counter = 0
+
+        self._build_available_feature_list()
         
+    def _build_available_feature_list(self):
+        """
+        Search all the available feature class and stored them
+        in a dictionary indexed by their names
+        """
+        self._available_features={}
+        self._feature_list = list()
+        for CurrentFeatureType in Learn2BanFeature.__subclasses__():
+            self._available_features[CurrentFeatureType.__name__] = CurrentFeatureType
+            self._feature_list.append(CurrentFeatureType.__name__)
+
+
     def process_received_message(self, action, message):
         if (action == self.BOTBANGER_LOG):
             return self._process_botbanger_log(message)
@@ -104,33 +122,39 @@ class VengeanceLiveSniffer(LogFetcher):
 
         print "no of ips", len(self._ip_log_db), " no of log recs", self._log_rec_counter
 
+        from random import randint
         cur_ip = cur_rec_dict["host"]
+        cur_ip = cur_ip[:-1] + str(randint(1,255))
         cur_ats_rec = ATSRecord(cur_rec_dict)
         if not cur_ip in self._ip_log_db:
             self._ip_log_db[cur_ip] = [cur_ats_rec]
         else:
             #get rid of old session
-            if cur_ats_rec.time_to_second() - self._ip_log_db[cur_ip][-1].time_to_second() > self._ip_sieve.DEAD_SESSION_PAUSE:
+            if cur_ats_rec.time_to_second() - self._ip_log_db[cur_ip][-1].time_to_second() > self.DEAD_SESSION_PAUSE:
                 self._log_rec_counter -= (len(self._ip_log_db[cur_ip]) - 1)
                 self._ip_log_db[cur_ip] = []
 
             self._ip_log_db[cur_ip].append(cur_ats_rec)
+            #get rid of ip's old row in the ip feature array
+            np.delete(self.ip_feature_array, (self.ip_row_tracker[cur_ip]), axis=0)
         
-        self._ip_sieve.set_pre_seived_order_records(dict(((cur_ip, self._ip_log_db[cur_ip]),)))
+        ip_recs = dict(((cur_ip, self._ip_log_db[cur_ip]),))
 
         #so this is stupid we should compute accumulatively
         #instead so ip_feature_db should be the member of
         #the class, it probably should be a training set
         ip_feature_db = {}
         for cur_feature_name in self._feature_list:
-            cur_feature_tester = self._available_features[cur_feature_name](self._ip_sieve, ip_feature_db)
+            cur_feature_tester = self._available_features[cur_feature_name](ip_recs, ip_feature_db)
             cur_feature_tester.compute()
 
-        #print ip_feature_db
         #turing ip_feature_db into a numpy array
-        ip_feautre_array = np_array([[ip_feature_db[ip][feature] for feature in range(0, len(self._feature_list))] for ip in ip_feautre_db])
-        
-        return ip_feature_array
+        self.ip_row_tracker[cur_ip] = self.ip_feature_array.shape[0]
+        cur_ip_row = [[ip_feature_db[ip][feature] for feature in range(1, len(self._feature_list)+1)] for ip in ip_feature_db]
+        if (self.ip_feature_array.shape[0] == 0):
+            self.ip_feature_array = np.array(cur_ip_row)
+        else:
+            self.ip_feature_array = np.vstack([self.ip_feature_array, cur_ip_row]) 
 
     def _clusterify(self, cur_rec_dict):
         """
@@ -141,25 +165,23 @@ class VengeanceLiveSniffer(LogFetcher):
             ats_record: the record of the new request to ats
         
         """
-        return False
-        pdb.set_trace()
         from sklearn.cluster import KMeans
 
         #We need to turn ip_table to numpy array as it done in
         #train2ban and botsniffer using TrainingSet but for now
         #we go with the simple just hack solution
         
-        ip_feautre_array = self._gather_all_features(cur_rec_dict)
+        self._gather_all_features(cur_rec_dict)
 
         for no_of_clusters in range(2,20):
-            kmeans = KMeans(n_clusters=no_of_clusters)
-            kmeans.fit(A)
+            if (self.ip_feature_array.shape[0] >= no_of_clusters) :
+                kmeans = KMeans(n_clusters=no_of_clusters)
+                kmeans.fit(self.ip_feature_array)
                     
-            j = [0]*no_of_clusters
+                j = [0]*no_of_clusters
                     
-            for i in kmeans.predict(A): 
-                j[i] = j[i]+1
+                for i in kmeans.predict(self.ip_feature_array): 
+                    j[i] = j[i]+1
 
-            print j
-
+                logging.debug(",".join(map(str,j)))
         return True

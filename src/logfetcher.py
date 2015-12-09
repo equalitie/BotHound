@@ -41,7 +41,6 @@ class LogFetcher(threading.Thread):
         zmq_cipher = encrypted_message[12:-16] 
         zmq_tag = encrypted_message[-16:]        
         zmq_decrypted = decrypt(self.hashed_key, "", zmq_iv, zmq_cipher, zmq_tag)
-        print zmq_decrypted
         
         message = zmq_decrypted.split(',') 
                 
