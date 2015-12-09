@@ -23,7 +23,6 @@ def main():
                       default="drawnandquarterly",
                       help="reads the key from command line")
 
-
     parser.add_option("-T", "--logtags",
                       action="store", dest="logtags",
                       default="botbanger_log",

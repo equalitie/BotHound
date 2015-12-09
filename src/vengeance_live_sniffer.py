@@ -124,7 +124,7 @@ class VengeanceLiveSniffer(LogFetcher):
 
         from random import randint
         cur_ip = cur_rec_dict["host"]
-        cur_ip = cur_ip[:-1] + str(randint(1,255))
+        #cur_ip = cur_ip[:-1] + str(randint(1,255))
         cur_ats_rec = ATSRecord(cur_rec_dict)
         if not cur_ip in self._ip_log_db:
             self._ip_log_db[cur_ip] = [cur_ats_rec]
