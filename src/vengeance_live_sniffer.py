@@ -98,15 +98,15 @@ class VengeanceLiveSniffer(LogFetcher):
         except:
             logging.error("Failed to decode the botbanger message")
             return False
-            
 
         return self._clusterify(cur_log_rec)
 
-    def _process_grey_memory_info(self, message):
+    def _process_greymemory_info(self, message):
         """
         Follow the github
         """
-        pass
+        logging.debug("greymemory says " + ",".join(message))
+        return True
 
     def _gather_all_features(self, cur_rec_dict):
         """
