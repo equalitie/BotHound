@@ -26,7 +26,6 @@ class SocketToZmq(basic.LineReceiver):
         print line
         iv, ciphertext, tag = encrypt(self.factory.hashed_key,line, "")
         self.factory.publisher.send_multipart([self.factory.zmq_tag, iv + ciphertext + tag])
-        self.factory.publisher.send_multipart([self.factory.zmq_tag, line])
 
 class SocketToZmqFactory(Factory):
     def buildProtocol(self, addr):

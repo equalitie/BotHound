@@ -52,7 +52,7 @@ class LogFetcher(threading.Thread):
                 zmq_tag = encrypted_message[-16:]        
                 zmq_decrypted = decrypt(self.hashed_key, "", zmq_iv, zmq_cipher, zmq_tag)
         
-                message = zmq_decrypted.split(',') 
+                message = zmq_decrypted 
                 logging.debug("decrypted message: %s"%message)
                 
                 return self.process_received_message(action, message);
