@@ -1,5 +1,5 @@
 """
-VengeanceLiveSniffer
+BothoundLiveSniffer
 
 This is a sniffer, when ever it receive a new record it adds it to the 
 feature db. When it receives a signale from GreyMemory then it get a 
@@ -27,7 +27,7 @@ from collections import OrderedDict
 # Gets the instance of the logger.
 logging = logging.getLogger("fail2ban.filter")
 
-class VengeanceLiveSniffer(LogFetcher):
+class BothoundLiveSniffer(LogFetcher):
     """
     listen to the log, if it gets message from
     GreyMemory then goes into classify mode for m minute and tries
@@ -42,7 +42,7 @@ class VengeanceLiveSniffer(LogFetcher):
         """
         Calls the parent constructor then initializes a ip_dictionary
         """
-        super(VengeanceLiveSniffer, self).__init__(bindstrings, passphrase, conf_file, verbose)
+        super(BothoundLiveSniffer, self).__init__(bindstrings, passphrase, conf_file, verbose)
         self._ip_log_db = OrderedDict()
         self.ip_row_tracker = {}
         self.ip_feature_array = np.array([])

@@ -5,7 +5,7 @@ import sys
 import threading
 import pdb
 
-from vengeance_live_sniffer import VengeanceLiveSniffer
+from bothound_live_sniffer import BothoundLiveSniffer
 
 def main():
     parser = optparse.OptionParser()
@@ -58,7 +58,7 @@ def main():
         logger.addHandler(hdlr)
         logger.setLevel(logging.DEBUG)
 
-    lfetcher = VengeanceLiveSniffer(options.bindstrings, options.passphrase, options.conffile, options.verbose)
+    lfetcher = BothoundLiveSniffer(options.bindstrings, options.passphrase, options.conffile, options.verbose)
     lfetcher.run()
 
 if __name__ == "__main__":
