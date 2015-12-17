@@ -1,4 +1,4 @@
-# vengeance
+# BotHound
 Automatic attack detector and botnet classifier
 
 Installation
