@@ -1,0 +1,6 @@
+---
+database:
+  name: bothound
+  user: root
+  password: xxx
+  host: 127.0.0.1

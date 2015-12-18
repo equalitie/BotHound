@@ -7,6 +7,8 @@ import pdb
 
 from bothound_live_sniffer import BothoundLiveSniffer
 
+from bothound_tools import BothoundTools
+
 def main():
     parser = optparse.OptionParser()
     parser.add_option("-v", "--verbose", dest="verbose",
@@ -57,6 +59,10 @@ def main():
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
         logger.setLevel(logging.DEBUG)
+
+    tools = BothoundTools()
+
+    tools.connect_to_db()
 
     lfetcher = BothoundLiveSniffer(options.bindstrings, options.passphrase, options.conffile, options.verbose)
     lfetcher.run()
