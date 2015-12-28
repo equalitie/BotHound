@@ -2,26 +2,11 @@
 Utility class that holds commonly used Bothound functions
 
 """
-import math
-import ConfigParser
 import numpy as np
-
-from os.path import dirname, abspath
-from os import getcwd, chdir
-
-import sys
-import glob
-import yaml
 
 import MySQLdb
 
-try:
-    src_dir = dirname(dirname(abspath(__file__)))
-except NameError:
-    #the best we can do to hope that we are in the test dir
-    src_dir = dirname(getcwd())
-
-sys.path.append(src_dir)
+from geoip import geolite2
 
 class BothoundTools():
     def connect_to_db(self):
@@ -49,21 +34,11 @@ class BothoundTools():
         self.cur.close()
         self.db.close()
 
-    def load_database_config(self):
-        """
-        Get configuration parameters from the bothound config file
-        and from the bothound database
-        """
-        conf_file_path = src_dir+'/conf/bothound.yaml'
-        print conf_file_path
-
-        stram = open(conf_file_path, "r")
-        conf = yaml.load(stram)
-        
-        self.db_user = conf["database"]["user"]
-        self.db_password = conf["database"]["password"]
-        self.db_host = conf["database"]["host"]
-        self.db_name = conf["database"]["name"]
+    def load_database_config(self, database_conf):        
+        self.db_user = database_conf["user"]
+        self.db_password = database_conf["password"]
+        self.db_host = database_conf["host"]
+        self.db_name = database_conf["name"]
 
     def random_slicer(self, data_size, train_portion=0.5):
         """
@@ -80,10 +55,19 @@ class BothoundTools():
         complement_selector = np.logical_not(random_selector)
 
         return random_selector, complement_selector
-
-    def __init__(self):
+    """
+    This method requires installation of the following packages.
+    It downloads the entire geo-location database, so its accessible offline. 
+    pip install python-geoip
+    pip install python-geoip-geolite2
+    """
+    def find_location(self, ip):
+        match = geolite2.lookup(ip)
+        return match.location
+    
+    def __init__(self, database_conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
         #config in the constructor
-        self.load_database_config()
+        self.load_database_config(database_conf)
         pass

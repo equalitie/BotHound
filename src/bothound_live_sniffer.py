@@ -2,8 +2,8 @@
 BothoundLiveSniffer
 
 This is a sniffer, when ever it receive a new record it adds it to the 
-feature db. When it receives a signale from GreyMemory then it get a 
-chunck from n min ago till now and uses unsupervised classification. 
+feature db. When it receives a signal from GreyMemory then it get a 
+chunk from n min ago till now and uses unsupervised classification. 
 To classify the botnet
 
 AUTHORS: vmon, ludost (C) Equalit.ie Nov 2015: Initial version
@@ -38,11 +38,11 @@ class BothoundLiveSniffer(LogFetcher):
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
     DEAD_SESSION_PAUSE = 10*60*3 #minimum number of seconds between two session
     
-    def __init__(self, bindstrings, passphrase, conf_file, verbose=False):
+    def __init__(self, conf_options):
         """
         Calls the parent constructor then initializes a ip_dictionary
         """
-        super(BothoundLiveSniffer, self).__init__(bindstrings, passphrase, conf_file, verbose)
+        super(BothoundLiveSniffer, self).__init__(conf_options)
         self._ip_log_db = OrderedDict()
         self.ip_row_tracker = {}
         self.ip_feature_array = np.array([])
