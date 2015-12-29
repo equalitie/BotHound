@@ -25,8 +25,37 @@ class BothoundTools():
         self.db = MySQLdb.connect(self.db_host, self.db_user, self.db_password, self.db_name)
         self.cur = self.db.cursor(MySQLdb.cursors.DictCursor)
 
-        self.cur.execute("create table IF NOT EXISTS attack_diary (id INT NOT NULL AUTO_INCREMENT, start_timestamp DATETIME, stop_timestamp DATETIME, dnet VARCHAR(255), host VARCHAR(255), number_of_banjax INT, deflect_hit INT, comment LONGTEXT, PRIMARY KEY(id)) ENGINE=INNODB;")
+        # ATTACKS table
+        self.cur.execute("create table IF NOT EXISTS attacks (id INT NOT NULL AUTO_INCREMENT, "
+        "comment LONGTEXT, "
+        "PRIMARY KEY(id)) ENGINE=INNODB;")
 
+       # INCIDENTS table
+        self.cur.execute("create table IF NOT EXISTS incidents (id INT NOT NULL AUTO_INCREMENT, "
+        "start_timestamp DATETIME, "
+        "stop_timestamp DATETIME, "
+        "comment LONGTEXT, "
+        "PRIMARY KEY(id), INDEX index_attack (id_attack), "
+        "FOREIGN KEY (id_attack) REFERENCES attacks(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+        
+        # SESSIONS table
+        self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
+        "id_incident INT NOT NULL, "
+        "IP VARCHAR(45), "
+        "request_interval FLOAT, "
+        "ua_change_rate FLOAT, "
+        "html2image_ratio FLOAT, "
+        "variance_request_interval FLOAT, "
+        "payload_average FLOAT, "
+        "error_rate FLOAT, "
+        "request_depth FLOAT, "
+        "request_depth_std FLOAT, "
+        "session_length FLOAT, "
+        "percentage_cons_requests FLOAT,"
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
+        "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+
+ 
     def disconnect_from_db(self):
         """
         Close connection to the database
