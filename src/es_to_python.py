@@ -1,4 +1,4 @@
-# Python query script that reads all ES records on the l2b server, stores them in a dictionary and prints it.
+# This is a Python query script that reads and prints ES records on the l2b server
 
 from elasticsearch import Elasticsearch
 import certifi
