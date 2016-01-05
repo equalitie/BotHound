@@ -1,0 +1,24 @@
+---
+database:
+  name: bothound
+  user: root
+  password: ----
+  host: 127.0.0.1
+
+sniffers:
+  - queue: grey_memory
+    bindstring: tcp://127.0.0.1:22621
+    passphrase: drawnandquarterly
+    logfile: logfetcher.log
+  - queue: botbanger_log
+    bindstring: tcp://127.0.0.1:22621
+    passphrase: drawnandquarterly
+    logfile: logfetcher.log
+  - queue: botbanger_log
+    bindstring: tcp://127.0.0.1:22621
+    passphrase: drawnandquarterly
+    logfile: logfetcher.log
+  - queue: botbanger_log
+    bindstring: tcp://127.0.0.1:22621
+    passphrase: drawnandquarterly
+    logfile: logfetcher.log

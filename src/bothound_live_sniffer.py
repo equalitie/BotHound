@@ -1,9 +1,9 @@
 """
-VengeanceLiveSniffer
+BothoundLiveSniffer
 
 This is a sniffer, when ever it receive a new record it adds it to the 
-feature db. When it receives a signale from GreyMemory then it get a 
-chunck from n min ago till now and uses unsupervised classification. 
+feature db. When it receives a signal from GreyMemory then it get a 
+chunk from n min ago till now and uses unsupervised classification. 
 To classify the botnet
 
 AUTHORS: vmon, ludost (C) Equalit.ie Nov 2015: Initial version
@@ -14,6 +14,7 @@ import numpy as np
 import re
 import sklearn
 import pdb 
+import json
 
 #Learn to ban modules
 from features.src import *
@@ -26,7 +27,7 @@ from collections import OrderedDict
 # Gets the instance of the logger.
 logging = logging.getLogger("fail2ban.filter")
 
-class VengeanceLiveSniffer(LogFetcher):
+class BothoundLiveSniffer(LogFetcher):
     """
     listen to the log, if it gets message from
     GreyMemory then goes into classify mode for m minute and tries
@@ -37,11 +38,11 @@ class VengeanceLiveSniffer(LogFetcher):
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
     DEAD_SESSION_PAUSE = 10*60*3 #minimum number of seconds between two session
     
-    def __init__(self, bindstrings, passphrase, conf_file, verbose=False):
+    def __init__(self, conf_options):
         """
         Calls the parent constructor then initializes a ip_dictionary
         """
-        super(VengeanceLiveSniffer, self).__init__(bindstrings, passphrase, conf_file, verbose)
+        super(BothoundLiveSniffer, self).__init__(conf_options)
         self._ip_log_db = OrderedDict()
         self.ip_row_tracker = {}
         self.ip_feature_array = np.array([])
@@ -69,11 +70,12 @@ class VengeanceLiveSniffer(LogFetcher):
 
     def _process_botbanger_log(self, message):
         try:
+            decoded_message = message.split(',')
             #we need to decode them from b64
-            for i in range(0, len(message)):
-                message[i] = message[i].decode('base64')
+            for i in range(0, len(decoded_message)):
+                decoded_message[i] = decoded_message[i].decode('base64')
 
-            ipaddress = message[0]
+            ipaddress = decoded_message[0]
                 
             ipaddress = ipaddress.strip()
             ipmatch = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
@@ -83,17 +85,17 @@ class VengeanceLiveSniffer(LogFetcher):
                 return False
 
             logging.debug("Received log for ip = %s", ipaddress)
-            logging.debug("log is: %s", message)
+            logging.debug("log is: %s", decoded_message)
 
             cur_log_rec = {}
-            cur_log_rec["host"] = message[0]
-            cur_log_rec["time"] = message[1]
-            cur_log_rec["request"] = message[2]
-            cur_log_rec["type"] = message[3]
-            cur_log_rec["status"] = message[4]
-            cur_log_rec["size"] = (not message[5]) and '0' or message[5]
-            cur_log_rec["agent"] = message[6]
-            cur_log_rec["hit"] = message[7]
+            cur_log_rec["host"] = decoded_message[0]
+            cur_log_rec["time"] = decoded_message[1]
+            cur_log_rec["request"] = decoded_message[2]
+            cur_log_rec["type"] = decoded_message[3]
+            cur_log_rec["status"] = decoded_message[4]
+            cur_log_rec["size"] = (not decoded_message[5]) and '0' or decoded_message[5]
+            cur_log_rec["agent"] = decoded_message[6]
+            cur_log_rec["hit"] = decoded_message[7]
                 
         except:
             logging.error("Failed to decode the botbanger message")
@@ -102,11 +104,28 @@ class VengeanceLiveSniffer(LogFetcher):
         return self._clusterify(cur_log_rec)
 
     def _process_greymemory_info(self, message):
-        """
-        Follow the github
-        """
-        logging.debug("greymemory says " + ",".join(message))
+        logging.debug("greymemory says " + "," + message)
+
+        try:
+            decoded_message = json.loads(message)        
+            if(decoded_message['message_type'] == 'anomaly_started') :
+                self._start_recording()
+            elif(decoded_message['message_type'] == 'anomaly_stopped') :
+                self._stop_recording()
+
+        except:
+            logging.error("Failed to decode the greymemory message")
+            return False
+
         return True
+
+    def _start_recording(self):
+        print "_start_recording"
+        pass
+
+    def _stop_recording(self):        
+        print "_stop_recording"
+        pass
 
     def _gather_all_features(self, cur_rec_dict):
         """
