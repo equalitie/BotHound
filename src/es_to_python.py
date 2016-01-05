@@ -4,11 +4,6 @@ from elasticsearch import Elasticsearch
 import certifi
 import datetime
 import calendar
-#import requests
-#res = requests.get('https://edge:spinbolnorv7@opsdash.deflect.ca:443')
-#print res.content
-import pdb
-#pdb.set_trace()
 
 es = Elasticsearch(
     '[...]',
