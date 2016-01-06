@@ -18,7 +18,7 @@ class BothoundTools():
 
         #Create cursor object to allow query execution
         self.cur = self.db.cursor(MySQLdb.cursors.DictCursor)
-        sql = 'CREATE DATABASE IF NOT EXISTS bothound'
+        sql = 'CREATE DATABASE IF NOT EXISTS ' + self.db_name
         self.cur.execute(sql)
 
 	    #Connect directly to DB
@@ -32,6 +32,7 @@ class BothoundTools():
 
        # INCIDENTS table
         self.cur.execute("create table IF NOT EXISTS incidents (id INT NOT NULL AUTO_INCREMENT, "
+        "id_attack INT NOT NULL,"
         "start_timestamp DATETIME, "
         "stop_timestamp DATETIME, "
         "comment LONGTEXT, "
