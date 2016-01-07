@@ -25,6 +25,7 @@ class ATSRecord:
         self.ip = cur_rec_dict["host"]
         self.time = cur_rec_dict["time"];
         self.payload = cur_rec_dict;
+        self.agent = cur_rec_dict["agent"]
 
         #do not run lexify it is slow
         #self.lexify()
