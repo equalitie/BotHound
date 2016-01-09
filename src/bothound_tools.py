@@ -6,8 +6,6 @@ import numpy as np
 
 import MySQLdb
 
-from geoip import geolite2
-
 class BothoundTools():
     def connect_to_db(self):
         """
@@ -85,15 +83,6 @@ class BothoundTools():
         complement_selector = np.logical_not(random_selector)
 
         return random_selector, complement_selector
-    """
-    This method requires installation of the following packages.
-    It downloads the entire geo-location database, so its accessible offline. 
-    pip install python-geoip
-    pip install python-geoip-geolite2
-    """
-    def find_location(self, ip):
-        match = geolite2.lookup(ip)
-        return match.location
     
     def __init__(self, database_conf):
         #we would like people to able to use the tool object even

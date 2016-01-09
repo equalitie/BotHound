@@ -27,7 +27,7 @@ def main():
 
     parser.add_option("-c", "--conf",
                       action="store", dest="conffile",
-                      default=src_dir+'/conf/bothound.yaml',
+                      default=src_dir+'/conf/_bothound.yaml',
                       help="Path to config file")
 
     (parsed_options, args) = parser.parse_args()
