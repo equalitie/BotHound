@@ -1,5 +1,6 @@
 import unittest
 from bothound_live_sniffer import BothoundLiveSniffer
+from apache_log_muncher import parse_line
 
 class BothoundLiveSnifferTestCase(unittest.TestCase):
     def setUp(self):
@@ -13,6 +14,6 @@ class BothoundLiveSnifferTestCase(unittest.TestCase):
         print "Calling _process_decoded_message"
         f = open('logfetcher.log', 'r')
         for line in f:
-            decoded_message = line.split(' ')
-            self.sniffer._process_decoded_message(decoded_message)
-        self.assert_(1 == 1);
+            message = parse_line(line)
+            self.sniffer._clusterify(message)
+        self.assert_(True);
