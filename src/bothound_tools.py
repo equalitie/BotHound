@@ -54,7 +54,14 @@ class BothoundTools():
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
- 
+        # clusters table
+        self.cur.execute("create table IF NOT EXISTS clusters (id INT NOT NULL AUTO_INCREMENT, "
+        "id_incident INT NOT NULL,"
+        "cluster_index INT NOT NULL,"
+        "comment LONGTEXT, "
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident), "
+        "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+        
     def disconnect_from_db(self):
         """
         Close connection to the database
