@@ -31,15 +31,19 @@ class BothoundTools():
        # INCIDENTS table
         self.cur.execute("create table IF NOT EXISTS incidents (id INT NOT NULL AUTO_INCREMENT, "
         "id_attack INT NOT NULL,"
-        "start_timestamp DATETIME, "
-        "stop_timestamp DATETIME, "
+        "start DATETIME, "
+        "stop DATETIME, "
+        "banjax_start DATETIME, "
+        "banjax_stop DATETIME, "
         "comment LONGTEXT, "
+        "processed BOOL,"
         "PRIMARY KEY(id), INDEX index_attack (id_attack), "
         "FOREIGN KEY (id_attack) REFERENCES attacks(id) ON DELETE CASCADE ) ENGINE=INNODB;")
         
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
         "id_incident INT NOT NULL, "
+        "cluster_index INT, "
         "IP VARCHAR(45), "
         "request_interval FLOAT, "
         "ua_change_rate FLOAT, "
@@ -51,8 +55,20 @@ class BothoundTools():
         "request_depth_std FLOAT, "
         "session_length FLOAT, "
         "percentage_cons_requests FLOAT,"
+        "coorditate_x FLOAT,"
+        "coorditate_y FLOAT,"
+        "coorditate_z FLOAT,"
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+
+        # CLUSTERS table
+        self.cur.execute("create table IF NOT EXISTS clusters (id INT NOT NULL AUTO_INCREMENT, "
+        "id_incident INT NOT NULL, "
+        "cluster_index INT NOT NULL, "
+        "comment LONGTEXT, "
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
+        "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+
 
  
     def disconnect_from_db(self):
