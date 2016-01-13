@@ -74,32 +74,34 @@ class BothoundLiveSniffer(LogFetcher):
             #we need to decode them from b64
             for i in range(0, len(decoded_message)):
                 decoded_message[i] = decoded_message[i].decode('base64')
-
-            ipaddress = decoded_message[0]
-                
-            ipaddress = ipaddress.strip()
-            ipmatch = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-            if not ipmatch.match(ipaddress):
-                logging.error("Failed to validate IP address %s - rejecting",
-                                  ipaddress)
-                return False
-
-            logging.debug("Received log for ip = %s", ipaddress)
-            logging.debug("log is: %s", decoded_message)
-
-            cur_log_rec = {}
-            cur_log_rec["host"] = decoded_message[0]
-            cur_log_rec["time"] = decoded_message[1]
-            cur_log_rec["request"] = decoded_message[2]
-            cur_log_rec["type"] = decoded_message[3]
-            cur_log_rec["status"] = decoded_message[4]
-            cur_log_rec["size"] = (not decoded_message[5]) and '0' or decoded_message[5]
-            cur_log_rec["agent"] = decoded_message[6]
-            cur_log_rec["hit"] = decoded_message[7]
-                
         except:
             logging.error("Failed to decode the botbanger message")
             return False
+        
+        return self._process_decoded_message(decoded_message) 
+    
+    def _process_decoded_message(self, decoded_message):
+        ipaddress = decoded_message[0]
+            
+        ipaddress = ipaddress.strip()
+        ipmatch = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+        if not ipmatch.match(ipaddress):
+            logging.error("Failed to validate IP address %s - rejecting",
+                              ipaddress)
+            return False
+
+        logging.debug("Received log for ip = %s", ipaddress)
+        logging.debug("log is: %s", decoded_message)
+
+        cur_log_rec = {}
+        cur_log_rec["host"] = decoded_message[0]
+        cur_log_rec["time"] = decoded_message[1]
+        cur_log_rec["request"] = decoded_message[2]
+        cur_log_rec["type"] = decoded_message[3]
+        cur_log_rec["status"] = decoded_message[4]
+        cur_log_rec["size"] = (not decoded_message[5]) and '0' or decoded_message[5]
+        cur_log_rec["agent"] = decoded_message[6]
+        cur_log_rec["hit"] = decoded_message[7]
 
         return self._clusterify(cur_log_rec)
 
