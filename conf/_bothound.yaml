@@ -6,7 +6,7 @@ database:
   host: 127.0.0.1
 
 sniffers:
-  - queue: grey_memory
+  - queue: greymemory_info
     bindstring: tcp://127.0.0.1:22621
     passphrase: drawnandquarterly
     logfile: logfetcher.log

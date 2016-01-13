@@ -90,7 +90,42 @@ class BothoundTools():
         complement_selector = np.logical_not(random_selector)
 
         return random_selector, complement_selector
+
+    """
+    This method requires installation of the following packages.
+    It downloads the entire geo-location database, so its accessible offline. 
+    pip install python-geoip
+    pip install python-geoip-geolite2
+    """
+    @staticmethod
+    def find_location(self, ip):
+        from geoip import geolite2
+        
+        match = geolite2.lookup(ip)
+        return match.location
     
+    """
+    Latitude and longitude are polar coordinates
+    So to use them as features in KMneas it is recommended to convert them into 
+    Cartesian coordinates, so that Euclidean distance between two points makes sense. 
+    """
+    @staticmethod
+    def convert_to_cartesian(self, location):
+        import math
+        
+        latitude = location[0]
+        longitude = location[0]
+        # Spherical coordinates in Radians
+        longitude_rad = longitude * (2 * math.pi)/360
+        latitude_rad = (latitude * 2) * (2 * math.pi)/360
+        R = (6378 + 6356)/2
+        
+        # Cartesian coordinates
+        cartesian = {};
+        cartesian['x'] = R * math.cos(latitude_rad) * math.cos(longitude_rad)
+        cartesian['y'] = R * math.cos(latitude_rad) * math.sin(longitude_rad)
+        cartesian['z'] = R * math.sin(latitude_rad)
+
     def __init__(self, database_conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this

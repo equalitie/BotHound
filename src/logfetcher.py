@@ -14,11 +14,14 @@ from zmq.eventloop import ioloop, zmqstream
 class LogFetcher(threading.Thread):
 
     def __init__(self, conf_options):
+        self.BOTBANGER_LOG = "botbanger_log"        
+        self.GREYMEMORY_INFO = "greymemory_info"
+        
         for sniffer in conf_options['sniffers']:
             context = zmq.Context()
             self.socket = context.socket(zmq.SUB)
             subscriber = zmqstream.ZMQStream(self.socket)
-            self.socket.setsockopt(zmq.SUBSCRIBE, sniffer['logfile'])
+            self.socket.setsockopt(zmq.SUBSCRIBE, sniffer['queue'])
             self.socket.connect(sniffer['bindstring'])
             threading.Thread.__init__(self)
             subscriber.on_recv(self.subscription)
