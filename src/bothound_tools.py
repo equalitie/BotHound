@@ -31,37 +31,57 @@ class BothoundTools():
        # INCIDENTS table
         self.cur.execute("create table IF NOT EXISTS incidents (id INT NOT NULL AUTO_INCREMENT, "
         "id_attack INT NOT NULL,"
-        "start_timestamp DATETIME, "
-        "stop_timestamp DATETIME, "
+        "start DATETIME, "
+        "stop DATETIME, "
+        "banjax_start DATETIME, "
+        "banjax_stop DATETIME, "
         "comment LONGTEXT, "
+        "processed BOOL,"
         "PRIMARY KEY(id), INDEX index_attack (id_attack), "
         "FOREIGN KEY (id_attack) REFERENCES attacks(id) ON DELETE CASCADE ) ENGINE=INNODB;")
         
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
         "id_incident INT NOT NULL, "
+        "cluster_index INT, "
         "IP VARCHAR(45), "
-        "request_interval FLOAT, "
-        "ua_change_rate FLOAT, "
-        "html2image_ratio FLOAT, "
-        "variance_request_interval FLOAT, "
-        "payload_average FLOAT, "
-        "error_rate FLOAT, "
-        "request_depth FLOAT, "
-        "request_depth_std FLOAT, "
-        "session_length FLOAT, "
-        "percentage_cons_requests FLOAT,"
+        "request_interval FLOAT, " #Feature Index 1
+        "ua_change_rate FLOAT, " #Feature Index 2
+        "html2image_ratio FLOAT, " #Feature Index 3
+        "variance_request_interval FLOAT, " #Feature Index 4
+        "payload_average FLOAT, " #Feature Index 5
+        "error_rate FLOAT, " #Feature Index 6
+        "request_depth FLOAT, " #Feature Index 7
+        "request_depth_std FLOAT, " #Feature Index 8
+        "session_length FLOAT, " #Feature Index 9
+        "percentage_cons_requests FLOAT," #Feature Index 10
+        "coorditate_x FLOAT," #Feature Index 11
+        "coorditate_y FLOAT," #Feature Index 12
+        "coorditate_z FLOAT," #Feature Index 13
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
-        # clusters table
+        # CLUSTERS table
         self.cur.execute("create table IF NOT EXISTS clusters (id INT NOT NULL AUTO_INCREMENT, "
-        "id_incident INT NOT NULL,"
-        "cluster_index INT NOT NULL,"
+        "id_incident INT NOT NULL, "
+        "cluster_index INT NOT NULL, "
         "comment LONGTEXT, "
-        "PRIMARY KEY(id), INDEX index_incicent (id_incident), "
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+
+    def insert_into_sessons_table(self, incident_id, ip_feature_db):
+        insert_sql = "insert into sessions values (" + str(incident_id) + ", 0, " 
+        for ip in ip_feature_db:
+            features = ip_feature_db[ip]
+            insert_sql += "\"" + ip + "\","
+            for feature in features:
+                insert_sql += str(feature) + ","
+
+        insert_sql = insert_sql[:-1]
+        insert_sql += ");"
         
+        self.cur.execute(insert_sql)
+ 
     def disconnect_from_db(self):
         """
         Close connection to the database
@@ -98,7 +118,7 @@ class BothoundTools():
     pip install python-geoip-geolite2
     """
     @staticmethod
-    def find_location(self, ip):
+    def find_location(ip):
         from geoip import geolite2
         
         match = geolite2.lookup(ip)
@@ -110,11 +130,11 @@ class BothoundTools():
     Cartesian coordinates, so that Euclidean distance between two points makes sense. 
     """
     @staticmethod
-    def convert_to_cartesian(self, location):
+    def convert_to_cartesian(location):
         import math
         
         latitude = location[0]
-        longitude = location[0]
+        longitude = location[1]
         # Spherical coordinates in Radians
         longitude_rad = longitude * (2 * math.pi)/360
         latitude_rad = (latitude * 2) * (2 * math.pi)/360
@@ -125,6 +145,7 @@ class BothoundTools():
         cartesian['x'] = R * math.cos(latitude_rad) * math.cos(longitude_rad)
         cartesian['y'] = R * math.cos(latitude_rad) * math.sin(longitude_rad)
         cartesian['z'] = R * math.sin(latitude_rad)
+        return cartesian
 
     def __init__(self, database_conf):
         #we would like people to able to use the tool object even

@@ -29,10 +29,7 @@ class FeatureLongitudeLatitudeZ(Learn2BanFeature):
                 self.append_feature(cur_ip_rec, 0)
                 return
 
-            # take the first record
-            record = ip_recs[cur_ip_rec][0]
-            
-            location = BothoundTools.find_location(record);
+            location = BothoundTools.find_location(cur_ip_rec);
             cartesian = BothoundTools.convert_to_cartesian(location);
             
             self.append_feature(cur_ip_rec, cartesian['z'])
