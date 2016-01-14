@@ -70,17 +70,19 @@ class BothoundTools():
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
     def insert_into_sessons_table(self, incident_id, ip_feature_db):
-        insert_sql = "insert into sessions values (" + str(incident_id) + ", 0, " 
         for ip in ip_feature_db:
+            insert_sql = "insert into sessions values (" + str(incident_id) + ", 0, " 
             features = ip_feature_db[ip]
             insert_sql += "\"" + ip + "\","
+            
             for feature in features:
-                insert_sql += str(feature) + ","
+                insert_sql += str(features[feature]) + ","
+                
+            insert_sql = insert_sql[:-1]
+            insert_sql += ");"
+            
+            self.cur.execute(insert_sql)
 
-        insert_sql = insert_sql[:-1]
-        insert_sql += ");"
-        
-        self.cur.execute(insert_sql)
  
     def disconnect_from_db(self):
         """
