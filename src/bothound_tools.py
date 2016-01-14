@@ -107,7 +107,7 @@ class BothoundTools():
     pip install python-geoip-geolite2
     """
     @staticmethod
-    def find_location(self, ip):
+    def find_location(ip):
         from geoip import geolite2
         
         match = geolite2.lookup(ip)
@@ -119,11 +119,11 @@ class BothoundTools():
     Cartesian coordinates, so that Euclidean distance between two points makes sense. 
     """
     @staticmethod
-    def convert_to_cartesian(self, location):
+    def convert_to_cartesian(location):
         import math
         
         latitude = location[0]
-        longitude = location[0]
+        longitude = location[1]
         # Spherical coordinates in Radians
         longitude_rad = longitude * (2 * math.pi)/360
         latitude_rad = (latitude * 2) * (2 * math.pi)/360
@@ -134,6 +134,7 @@ class BothoundTools():
         cartesian['x'] = R * math.cos(latitude_rad) * math.cos(longitude_rad)
         cartesian['y'] = R * math.cos(latitude_rad) * math.sin(longitude_rad)
         cartesian['z'] = R * math.sin(latitude_rad)
+        return cartesian
 
     def __init__(self, database_conf):
         #we would like people to able to use the tool object even
