@@ -45,19 +45,19 @@ class BothoundTools():
         "id_incident INT NOT NULL, "
         "cluster_index INT, "
         "IP VARCHAR(45), "
-        "request_interval FLOAT, "
-        "ua_change_rate FLOAT, "
-        "html2image_ratio FLOAT, "
-        "variance_request_interval FLOAT, "
-        "payload_average FLOAT, "
-        "error_rate FLOAT, "
-        "request_depth FLOAT, "
-        "request_depth_std FLOAT, "
-        "session_length FLOAT, "
-        "percentage_cons_requests FLOAT,"
-        "coorditate_x FLOAT,"
-        "coorditate_y FLOAT,"
-        "coorditate_z FLOAT,"
+        "request_interval FLOAT, " #Feature Index 1
+        "ua_change_rate FLOAT, " #Feature Index 2
+        "html2image_ratio FLOAT, " #Feature Index 3
+        "variance_request_interval FLOAT, " #Feature Index 4
+        "payload_average FLOAT, " #Feature Index 5
+        "error_rate FLOAT, " #Feature Index 6
+        "request_depth FLOAT, " #Feature Index 7
+        "request_depth_std FLOAT, " #Feature Index 8
+        "session_length FLOAT, " #Feature Index 9
+        "percentage_cons_requests FLOAT," #Feature Index 10
+        "coorditate_x FLOAT," #Feature Index 11
+        "coorditate_y FLOAT," #Feature Index 12
+        "coorditate_z FLOAT," #Feature Index 13
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
@@ -69,7 +69,18 @@ class BothoundTools():
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
+    def insert_into_sessons_table(self, incident_id, ip_feature_db):
+        insert_sql = "insert into sessions values (" + str(incident_id) + ", 0, " 
+        for ip in ip_feature_db:
+            features = ip_feature_db[ip]
+            insert_sql += "\"" + ip + "\","
+            for feature in features:
+                insert_sql += str(feature) + ","
 
+        insert_sql = insert_sql[:-1]
+        insert_sql += ");"
+        
+        self.cur.execute(insert_sql)
  
     def disconnect_from_db(self):
         """
