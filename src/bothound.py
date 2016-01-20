@@ -27,7 +27,7 @@ def main():
 
     parser.add_option("-c", "--conf",
                       action="store", dest="conffile",
-                      default=src_dir+'/conf/_bothound.yaml',
+                      default=src_dir+'/conf/bothound.yaml',
                       help="Path to config file")
 
     (parsed_options, args) = parser.parse_args()
@@ -58,6 +58,9 @@ def main():
 
     tools = BothoundTools(conf["database"])
     tools.connect_to_db()
+
+    print "Processed incidents:"
+    print tools.get_processed_incidents()
 
     lfetcher = BothoundLiveSniffer(conf_options)
     lfetcher.run()

@@ -30,15 +30,15 @@ class BothoundTools():
 
        # INCIDENTS table
         self.cur.execute("create table IF NOT EXISTS incidents (id INT NOT NULL AUTO_INCREMENT, "
-        "id_attack INT NOT NULL,"
+        "id_attack INT,"
         "start DATETIME, "
         "stop DATETIME, "
         "banjax_start DATETIME, "
         "banjax_stop DATETIME, "
         "comment LONGTEXT, "
         "processed BOOL,"
-        "PRIMARY KEY(id), INDEX index_attack (id_attack), "
-        "FOREIGN KEY (id_attack) REFERENCES attacks(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+        "PRIMARY KEY(id)) "
+        "ENGINE=INNODB;")
         
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
@@ -70,18 +70,34 @@ class BothoundTools():
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
     def insert_into_sessons_table(self, incident_id, ip_feature_db):
-        insert_sql = "insert into sessions values (" + str(incident_id) + ", 0, " 
         for ip in ip_feature_db:
+            insert_sql = "insert into sessions values (" + str(incident_id) + ", 0, " 
             features = ip_feature_db[ip]
             insert_sql += "\"" + ip + "\","
+            
             for feature in features:
-                insert_sql += str(feature) + ","
+                insert_sql += str(features[feature]) + ","
+                
+            insert_sql = insert_sql[:-1]
+            insert_sql += ");"
+            
+            self.cur.execute(insert_sql)
 
-        insert_sql = insert_sql[:-1]
-        insert_sql += ");"
-        
-        self.cur.execute(insert_sql)
  
+    def get_incidents(self, processed):
+        incidents = []
+        self.cur.execute("select id, start, stop from incidents WHERE cast(processed as unsigned) = %d" % (1 if processed else 0))
+        for row in self.cur.fetchall():
+            incidents.append(row)
+
+        return incidents
+
+    def get_processed_incidents(self):
+        return self.get_incidents(True)
+
+    def get_not_processed_incidents(self):
+        return self.get_incidents(False)
+
     def disconnect_from_db(self):
         """
         Close connection to the database
