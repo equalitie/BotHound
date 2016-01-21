@@ -82,6 +82,7 @@ class BothoundTools():
             insert_sql += ");"
             
             self.cur.execute(insert_sql)
+        self.db.commit()
 
  
     def get_incidents(self, processed):
@@ -163,9 +164,57 @@ class BothoundTools():
         cartesian['z'] = R * math.sin(latitude_rad)
         return cartesian
 
+    """
+    create a test incident and all the sessions from 
+    ../data/feature_db-files.txt
+    """
+    def create_test_incident(self):
+
+        test_comment = 'Test incident'
+        #check if the test incident exists
+        self.cur.execute("select id from incidents WHERE comment = '{0}'".format(test_comment))
+        for row in self.cur.fetchall():
+            print "test incident exists", row['id']
+            return row['id']
+
+        print "creating test incident..."
+
+        #new incident record
+        sql = "insert into incidents(comment) VALUES('%s')" % (test_comment)
+        self.cur.execute(sql)
+
+        id_incident = self.cur.lastrowid;
+        print "id_incident", id_incident
+
+        filename = '../data/feature_db-files.txt'
+        file = open(filename)
+        for line in file:
+            splitted_line = line.split(') {')
+
+            useful_part = splitted_line[1]
+            useful_part = useful_part[:-2]
+            new_split = useful_part.split(', ')
+
+            insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, " 
+            insert_sql += "\"127.0.0.1\","
+            for b in new_split:
+               c = b.split(': ')[1]
+               insert_sql += str(c) + ","
+                
+            insert_sql += "0,0,0,"
+            insert_sql = insert_sql[:-1]
+            insert_sql += ");"
+            self.cur.execute(insert_sql)
+        
+        self.db.commit()
+        print "done."
+        return id_incident
+
     def __init__(self, database_conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
         #config in the constructor
         self.load_database_config(database_conf)
         pass
+
+
