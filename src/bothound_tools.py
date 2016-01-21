@@ -6,6 +6,8 @@ import numpy as np
 
 import MySQLdb
 
+from sklearn.cluster import DBSCAN
+
 class BothoundTools():
     def connect_to_db(self):
         """
@@ -55,9 +57,9 @@ class BothoundTools():
         "request_depth_std FLOAT, " #Feature Index 8
         "session_length FLOAT, " #Feature Index 9
         "percentage_cons_requests FLOAT," #Feature Index 10
-        "coorditate_x FLOAT," #Feature Index 11
-        "coorditate_y FLOAT," #Feature Index 12
-        "coorditate_z FLOAT," #Feature Index 13
+        "coordinate_x FLOAT," #Feature Index 11
+        "coordinate_y FLOAT," #Feature Index 12
+        "coordinate_z FLOAT," #Feature Index 13
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
@@ -69,9 +71,9 @@ class BothoundTools():
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
-    def insert_into_sessons_table(self, incident_id, ip_feature_db):
+    def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
-            insert_sql = "insert into sessions values (" + str(incident_id) + ", 0, " 
+            insert_sql = "insert into sessions values (" + str(id_incident) + ", 0, " 
             features = ip_feature_db[ip]
             insert_sql += "\"" + ip + "\","
             
@@ -84,7 +86,13 @@ class BothoundTools():
             self.cur.execute(insert_sql)
         self.db.commit()
 
- 
+    def get_sessions(self, id_incident):
+        sessions = []
+        self.cur.execute("select * from sessions WHERE id_incident = {0}".format(id_incident))
+        for row in self.cur.fetchall():
+            sessions.append(row)
+        return sessions
+
     def get_incidents(self, processed):
         incidents = []
         self.cur.execute("select id, start, stop from incidents WHERE cast(processed as unsigned) = %d" % (1 if processed else 0))
@@ -168,7 +176,7 @@ class BothoundTools():
     create a test incident and all the sessions from 
     ../data/feature_db-files.txt
     """
-    def create_test_incident(self):
+    def get_test_incident(self):
 
         test_comment = 'Test incident'
         #check if the test incident exists
@@ -188,6 +196,7 @@ class BothoundTools():
 
         filename = '../data/feature_db-files.txt'
         file = open(filename)
+        line_number = 1
         for line in file:
             splitted_line = line.split(') {')
 
@@ -196,7 +205,8 @@ class BothoundTools():
             new_split = useful_part.split(', ')
 
             insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, " 
-            insert_sql += "\"127.0.0.1\","
+            insert_sql += "\"" + str(line_number) + "\","
+            line_number = line_number + 1
             for b in new_split:
                c = b.split(': ')[1]
                insert_sql += str(c) + ","
@@ -209,6 +219,49 @@ class BothoundTools():
         self.db.commit()
         print "done."
         return id_incident
+
+    def cluster(self, id_incident):
+        sessions = self.get_sessions(id_incident)
+        features = [
+            "request_interval",
+            "ua_change_rate",
+            "html2image_ratio",
+            "variance_request_interval",
+            "payload_average",
+            "error_rate",
+            "request_depth",
+            "request_depth_std",
+            "session_length",
+            "percentage_cons_requests",
+            "coordinate_x",
+            "coordinate_y",
+            "coordinate_z"
+            ]
+        data_set = []
+        for session in sessions:
+            values = []
+            for feature in features:
+                values.append(session[feature])
+            data_set.append(values)
+
+        X = np.array(data_set)
+
+        # Compute DBSCAN
+        db = DBSCAN(eps=0.1, min_samples=20).fit(X)        
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        labels = db.labels_
+
+        # Number of clusters in labels, ignoring noise if present.
+        n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+        print('Estimated number of clusters: %d' % n_clusters_)        
+
+        #update the cluster column in session table
+        for session, label in zip(sessions, labels):
+            self.cur.execute('update sessions set cluster_index ={0} '
+            'where id={1}'.format(label, session['id']))
+        self.db.commit()
+
 
     def __init__(self, database_conf):
         #we would like people to able to use the tool object even

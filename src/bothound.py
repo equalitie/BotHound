@@ -63,10 +63,8 @@ def main():
     #print "Processed incidents:"
     #print tools.get_processed_incidents()
 
-    # Create a test incident
-    id_incident = tools.create_test_incident()
-    tools.disconnect_from_db
-
+    # Get test incident
+    tools.cluster(tools.get_test_incident())
 
     lfetcher = BothoundLiveSniffer(conf_options)
     lfetcher.run()
