@@ -2,23 +2,23 @@
 database:
   name: bothound
   user: root
-  password: ----
+  password: 
   host: 127.0.0.1
 
 sniffers:
   - queue: greymemory_info
     bindstring: tcp://127.0.0.1:22621
-    passphrase: drawnandquarterly
+    passphrase: xxx
     logfile: logfetcher.log
   - queue: botbanger_log
     bindstring: tcp://127.0.0.1:22621
-    passphrase: drawnandquarterly
+    passphrase: xxx
     logfile: logfetcher.log
   - queue: botbanger_log
     bindstring: tcp://127.0.0.1:22621
-    passphrase: drawnandquarterly
+    passphrase: xxx
     logfile: logfetcher.log
   - queue: botbanger_log
     bindstring: tcp://127.0.0.1:22621
-    passphrase: drawnandquarterly
+    passphrase: xxx
     logfile: logfetcher.log
