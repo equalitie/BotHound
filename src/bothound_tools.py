@@ -87,19 +87,13 @@ class BothoundTools():
         self.db.commit()
 
     def get_sessions(self, id_incident):
-        sessions = []
         self.cur.execute("select * from sessions WHERE id_incident = {0}".format(id_incident))
-        for row in self.cur.fetchall():
-            sessions.append(row)
-        return sessions
+        return self.cur.fetchall()
 
     def get_incidents(self, processed):
-        incidents = []
-        self.cur.execute("select id, start, stop from incidents WHERE cast(processed as unsigned) = %d" % (1 if processed else 0))
-        for row in self.cur.fetchall():
-            incidents.append(row)
-
-        return incidents
+        self.cur.execute("select id, start, stop from incidents WHERE "
+        "cast(processed as unsigned) = %d" % (1 if processed else 0))
+        return self.cur.fetchall()
 
     def get_processed_incidents(self):
         return self.get_incidents(True)
@@ -220,6 +214,11 @@ class BothoundTools():
         print "done."
         return id_incident
 
+    """
+    Cluster the sessions in the incident.
+    Update cluster_index in session table
+    Return the sessions with the calculated cluster_index
+    """    
     def cluster(self, id_incident):
         sessions = self.get_sessions(id_incident)
         features = [
@@ -251,7 +250,6 @@ class BothoundTools():
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
-        print db 
 
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -259,9 +257,11 @@ class BothoundTools():
 
         #update the cluster column in session table
         for session, label in zip(sessions, labels):
+            sessions["cluster_index"] = label
             self.cur.execute('update sessions set cluster_index ={0} '
             'where id={1}'.format(label, session['id']))
         self.db.commit()
+        return sessions
 
 
     def __init__(self, database_conf):

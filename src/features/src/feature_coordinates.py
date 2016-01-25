@@ -9,13 +9,15 @@ AUTHORS::
 from learn2ban_feature import Learn2BanFeature
 from bothound_tools import BothoundTools
 
-class FeatureLongitudeLatitudeY(Learn2BanFeature):
+class FeatureLongitudeLatitudeX(Learn2BanFeature):
     def __init__(self, ip_recs, ip_feature_db):
         Learn2BanFeature.__init__(self, ip_recs, ip_feature_db)
         
         #Each feature need to have unique index as the field number
         #in ip_feature_db
-        self._FEATURE_INDEX = 13
+        # The following 3 features will be added: x, y, z
+        # The indexes are 12, 13, 14
+        self._FEATURE_INDEX = 12 # 13, 14 
 
     
     def compute(self):
@@ -28,9 +30,16 @@ class FeatureLongitudeLatitudeY(Learn2BanFeature):
             if sample_size < 1:
                 self.append_feature(cur_ip_rec, 0)
                 return
-
+            
             location = BothoundTools.find_location(cur_ip_rec);
             cartesian = BothoundTools.convert_to_cartesian(location);
-            
+
+            self._FEATURE_INDEX = 12            
+            self.append_feature(cur_ip_rec, cartesian['x'])
+            self._FEATURE_INDEX = 13
             self.append_feature(cur_ip_rec, cartesian['y'])
+            self._FEATURE_INDEX = 14
+            self.append_feature(cur_ip_rec, cartesian['z'])
+
+            self._FEATURE_INDEX = 12
             
