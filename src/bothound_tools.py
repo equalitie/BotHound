@@ -5,6 +5,7 @@ Utility class that holds commonly used Bothound functions
 import numpy as np
 
 import MySQLdb
+from features.src.feature_geo import FeatureGEO
 
 from sklearn.cluster import DBSCAN
 
@@ -57,9 +58,9 @@ class BothoundTools():
         "request_depth_std FLOAT, " #Feature Index 8
         "session_length FLOAT, " #Feature Index 9
         "percentage_cons_requests FLOAT," #Feature Index 10
-        "coordinate_x FLOAT," #Feature Index 11
-        "coordinate_y FLOAT," #Feature Index 12
-        "coordinate_z FLOAT," #Feature Index 13
+        "latitude FLOAT," #Feature Index 11
+        "longitude FLOAT," #Feature Index 12
+        "country VARCHAR(40)," #Feature Index 13
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
@@ -88,18 +89,28 @@ class BothoundTools():
 
     def get_sessions(self, id_incident):
         self.cur.execute("select * from sessions WHERE id_incident = {0}".format(id_incident))
-        return self.cur.fetchall()
+        return [dict(elem) for elem in self.cur.fetchall()]
 
     def get_incidents(self, processed):
         self.cur.execute("select id, start, stop from incidents WHERE "
         "cast(processed as unsigned) = %d" % (1 if processed else 0))
-        return self.cur.fetchall()
+        return [dict(elem) for elem in self.cur.fetchall()]
 
     def get_processed_incidents(self):
         return self.get_incidents(True)
 
     def get_not_processed_incidents(self):
         return self.get_incidents(False)
+
+    def update_geo(self, id_incident):
+        self.cur.execute("select id, ip from sessions WHERE id_incident = {0}".format(id_incident))
+        rows = self.cur.fetchall();
+        for row in rows:
+            match = FeatureGEO.find_location(row['ip'])
+            self.cur.execute("update sessions set latitude={}, longitude={}, country='{}'"
+            " WHERE id = {}"
+            .format(match['latitude'], match['longitude'], match['country'], row['id']))
+        return
 
     def disconnect_from_db(self):
         """
@@ -129,42 +140,6 @@ class BothoundTools():
         complement_selector = np.logical_not(random_selector)
 
         return random_selector, complement_selector
-
-    """
-    This method requires installation of the following packages.
-    It downloads the entire geo-location database, so its accessible offline. 
-    pip install python-geoip
-    pip install python-geoip-geolite2
-    """
-    @staticmethod
-    def find_location(ip):
-        from geoip import geolite2
-        
-        match = geolite2.lookup(ip)
-        return match.location
-    
-    """
-    Latitude and longitude are polar coordinates
-    So to use them as features in KMneas it is recommended to convert them into 
-    Cartesian coordinates, so that Euclidean distance between two points makes sense. 
-    """
-    @staticmethod
-    def convert_to_cartesian(location):
-        import math
-        
-        latitude = location[0]
-        longitude = location[1]
-        # Spherical coordinates in Radians
-        longitude_rad = longitude * (2 * math.pi)/360
-        latitude_rad = (latitude * 2) * (2 * math.pi)/360
-        R = (6378 + 6356)/2
-        
-        # Cartesian coordinates
-        cartesian = {};
-        cartesian['x'] = R * math.cos(latitude_rad) * math.cos(longitude_rad)
-        cartesian['y'] = R * math.cos(latitude_rad) * math.sin(longitude_rad)
-        cartesian['z'] = R * math.sin(latitude_rad)
-        return cartesian
 
     """
     create a test incident and all the sessions from 
@@ -232,9 +207,8 @@ class BothoundTools():
             "request_depth_std",
             "session_length",
             "percentage_cons_requests",
-            "coordinate_x",
-            "coordinate_y",
-            "coordinate_z"
+            #"latitude",
+            #"longitude"
             ]
         data_set = []
         for session in sessions:
@@ -242,6 +216,9 @@ class BothoundTools():
             for feature in features:
                 values.append(session[feature])
             data_set.append(values)
+
+        if len(data_set) == 0 :
+            return
 
         X = np.array(data_set)
 
@@ -257,7 +234,7 @@ class BothoundTools():
 
         #update the cluster column in session table
         for session, label in zip(sessions, labels):
-            sessions["cluster_index"] = label
+            session["cluster_index"] = label
             self.cur.execute('update sessions set cluster_index ={0} '
             'where id={1}'.format(label, session['id']))
         self.db.commit()

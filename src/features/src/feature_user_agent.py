@@ -5,6 +5,7 @@ AUTHORS::
     
     - Anton Mazhurin : 
 
+notes: consider using https://github.com/woothee/woothee
 """
 from learn2ban_feature import Learn2BanFeature
 from ua_parser import user_agent_parser
