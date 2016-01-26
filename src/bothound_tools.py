@@ -107,9 +107,10 @@ class BothoundTools():
         rows = self.cur.fetchall();
         for row in rows:
             match = FeatureGEO.find_location(row['ip'])
-            self.cur.execute("update sessions set latitude={}, longitude={}, country='{}'"
-            " WHERE id = {}"
-            .format(match['latitude'], match['longitude'], match['country'], row['id']))
+            sql = "update sessions set latitude={}, longitude={}, country='{}' WHERE id = {}".format(match['latitude'], match['longitude'], match['country'], row['id'])
+            self.cur.execute(sql)
+
+        self.db.commit()
         return
 
     def disconnect_from_db(self):

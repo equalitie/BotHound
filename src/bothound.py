@@ -65,6 +65,7 @@ def main():
 
     # Get test incident
     tools.cluster(tools.get_test_incident())
+
     tools.update_geo(tools.get_test_incident())
 
     lfetcher = BothoundLiveSniffer(conf_options)
