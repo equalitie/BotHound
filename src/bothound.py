@@ -63,10 +63,14 @@ def main():
     #print "Processed incidents:"
     #print tools.get_processed_incidents()
 
-    # Get test incident
-    tools.cluster(tools.get_test_incident())
+    # Cluster test incident
+    #tools.cluster(tools.get_test_incident())
 
-    tools.update_geo(tools.get_test_incident())
+    #  Update geo 
+    #tools.update_geo(tools.get_test_incident())
+
+    sessions = tools.get_sessions(tools.get_test_incident())
+    print "test session length:", len(sessions)
 
     lfetcher = BothoundLiveSniffer(conf_options)
     lfetcher.run()

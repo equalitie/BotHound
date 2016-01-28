@@ -15,15 +15,18 @@ class BothoundTools():
         This connetcion to the db will live for the live time of the
         learn2bantools instance and will be used to save data back to the db
         """
-        self.db = MySQLdb.connect(self.db_host, self.db_user, self.db_password)
+        self.db = MySQLdb.connect(host = self.db_host, user = self.db_user, 
+            passwd = self.db_password,port = self.db_port)
 
         #Create cursor object to allow query execution
         self.cur = self.db.cursor(MySQLdb.cursors.DictCursor)
         sql = 'CREATE DATABASE IF NOT EXISTS ' + self.db_name
         self.cur.execute(sql)
+        self.db.close()
 
 	    #Connect directly to DB
-        self.db = MySQLdb.connect(self.db_host, self.db_user, self.db_password, self.db_name)
+        self.db = MySQLdb.connect(host = self.db_host, user = self.db_user, 
+            passwd = self.db_password, port = self.db_port, db = self.db_name)
         self.cur = self.db.cursor(MySQLdb.cursors.DictCursor)
 
         # ATTACKS table
@@ -125,6 +128,10 @@ class BothoundTools():
         self.db_password = database_conf["password"]
         self.db_host = database_conf["host"]
         self.db_name = database_conf["name"]
+        if("port" in database_conf):
+            self.db_port = database_conf["port"]
+        else:
+            self.db_port = 3306
 
     def random_slicer(self, data_size, train_portion=0.5):
         """
