@@ -97,3 +97,9 @@ class ATSRecord:
 	Retrieves the requested uri, if present, for the current payload
 	"""
         return self.payload["request"]
+
+    def get_target(self):
+    """
+    Retrieves the requested target domain, if present, for the current payload
+    """
+        return self.payload["referrer"]

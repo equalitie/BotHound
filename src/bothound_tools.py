@@ -64,6 +64,7 @@ class BothoundTools():
         "latitude FLOAT," #Feature Index 11
         "longitude FLOAT," #Feature Index 12
         "country VARCHAR(40)," #Feature Index 13
+        "id_deflectee INT," #Feature Index 14
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
@@ -74,6 +75,11 @@ class BothoundTools():
         "comment LONGTEXT, "
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
+
+        # DEFLECTEES table
+        self.cur.execute("create table IF NOT EXISTS deflectees (id INT NOT NULL AUTO_INCREMENT, "
+        "comment LONGTEXT, "
+        "PRIMARY KEY(id)) ENGINE=INNODB;")
 
     def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
