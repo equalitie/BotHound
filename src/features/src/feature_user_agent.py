@@ -16,7 +16,7 @@ class FeatureUserAgent(Learn2BanFeature):
         
         #Each feature need to have unique index as the field number
         #in ip_feature_db
-        self._FEATURE_INDEX = 11
+        self._FEATURE_INDEX = 9999 # disabled now
 
     def string_kernel(self, string_value):
         value = 55
@@ -45,7 +45,7 @@ class FeatureUserAgent(Learn2BanFeature):
             
             feature_value  = self.string_kernel(record.agent)
 
-            self.append_feature(cur_ip_rec, feature_value)
+            #self.append_feature(cur_ip_rec, feature_value)
 
 
 

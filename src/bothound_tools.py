@@ -78,6 +78,7 @@ class BothoundTools():
 
         # DEFLECTEES table
         self.cur.execute("create table IF NOT EXISTS deflectees (id INT NOT NULL AUTO_INCREMENT, "
+        "domain LONGTEXT, "
         "comment LONGTEXT, "
         "PRIMARY KEY(id)) ENGINE=INNODB;")
 
@@ -194,7 +195,7 @@ class BothoundTools():
                c = b.split(': ')[1]
                insert_sql += str(c) + ","
                 
-            insert_sql += "0,0,0,"
+            insert_sql += "0,0,\"\",0,"
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
             self.cur.execute(insert_sql)
