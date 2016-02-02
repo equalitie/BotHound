@@ -6,6 +6,7 @@ import numpy as np
 
 import MySQLdb
 from features.src.feature_geo import FeatureGEO
+from features.src.feature_deflectee import FeatureDeflectee
 
 from sklearn.cluster import DBSCAN
 
@@ -81,6 +82,39 @@ class BothoundTools():
         "domain LONGTEXT, "
         "comment LONGTEXT, "
         "PRIMARY KEY(id)) ENGINE=INNODB;")
+
+    def get_deflectees(self):
+        self.cur.execute("select * from deflectees")
+        return [dict(elem) for elem in self.cur.fetchall()]
+
+    """
+    Replace domain string value in ip_feature_db with the appropriate 
+    ID from deflectees table.
+    Create new rows in deflectees table if necessary
+    """
+    def factorize_deflectees(self, ip_feature_db):
+        deflectees = self.get_deflectees()
+
+        ids = {}
+        for d in deflectees:
+            ids[d["domain"]] = d['id']
+
+        feature_index = FeatureDeflectee({},{}).get_index()
+
+        for ip in ip_feature_db:
+            features = ip_feature_db[ip]
+            domain = features[feature_index] 
+
+            if(domain in ids):
+                features[feature_index] = ids[domain]
+            else:
+                self.cur.execute("insert into deflectees(domain) values ('{}')".format(domain))
+                ids[domain] = self.cur.lastrowid
+                features[feature_index] = self.cur.lastrowid
+                self.db.commit()
+
+        return ip_feature_db
+        
 
     def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
@@ -175,7 +209,7 @@ class BothoundTools():
         sql = "insert into incidents(comment) VALUES('%s')" % (test_comment)
         self.cur.execute(sql)
 
-        id_incident = self.cur.lastrowid;
+        id_incident = self.cur.lastrowid
         print "id_incident", id_incident
 
         filename = '../data/feature_db-files.txt'

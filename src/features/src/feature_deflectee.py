@@ -1,26 +1,18 @@
 """
-Parse user agent string and create the appropriate features
-
+Parse target domain name and create the appropriate features
 AUTHORS::
-    
     - Anton Mazhurin : 
-
-notes: consider using https://github.com/woothee/woothee
 """
 from learn2ban_feature import Learn2BanFeature
 from ua_parser import user_agent_parser
 
-class FeatureUserAgent(Learn2BanFeature):
+class FeatureDeflectee(Learn2BanFeature):
     def __init__(self, ip_recs, ip_feature_db):
         Learn2BanFeature.__init__(self, ip_recs, ip_feature_db)
         
         #Each feature need to have unique index as the field number
         #in ip_feature_db
-        self._FEATURE_INDEX = 15 # disabled now
-
-    # deflectees is dictionary : {"domain1" : id1, "domain2" : id2, ...}
-    def set_deflectees(self, deflectees):
-        self.deflectees = deflectees
+        self._FEATURE_INDEX = 15 
 
     def compute(self):
         if(self.deflectees is None):
@@ -34,11 +26,8 @@ class FeatureUserAgent(Learn2BanFeature):
                 # we tale the first one hoping the rest are the same
                 domain = payload.get_target()
                 break
-            id = 0
-            if(domain in self.deflectees)
-                id = self.deflectees[domain]["id"]
 
-            self.append_feature(cur_ip_rec, id)
+            self.append_feature(cur_ip_rec, domain)
 
 
 

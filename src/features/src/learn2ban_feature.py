@@ -39,6 +39,9 @@ class Learn2BanFeature(object):
         """
         pass
 
+    def get_index(self):
+        return self._FEATURE_INDEX
+
     def append_feature(self, inspected_ip, feature_value):
         """
         Just checks if the ip is in the database adds the feature to it

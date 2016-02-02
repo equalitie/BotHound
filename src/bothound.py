@@ -72,6 +72,15 @@ def main():
     sessions = tools.get_sessions(tools.get_test_incident())
     print "test session length:", len(sessions)
 
+    #print "Deflectees:"
+    #print tools.get_deflectees()
+
+    # Testing factorize_deflectees
+    #feature_db = {111:{15:"www.google.com"}, 222:{15:"www.apple.com"}, 333:{15:"www.yahoo.com"}}
+    #feature_db = tools.factorize_deflectees(feature_db)
+    #print feature_db
+
+
     lfetcher = BothoundLiveSniffer(conf_options)
     lfetcher.run()
 
