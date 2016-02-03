@@ -9,8 +9,8 @@ AUTHORS:
 
 """
 
-from tools.apache_log_muncher import parse_line as parse_apache_line
-from tools.ats_record import ATSRecord
+from util.apache_log_muncher import parse_line as parse_apache_line
+from util.ats_record import ATSRecord
 
 class IPSieve():
     DEAD_SESSION_PAUSE  = 1800 #minimum number of seconds between two session

@@ -41,7 +41,7 @@ class BothoundTools():
         "processed BOOL,"
         "PRIMARY KEY(id)) "
         "ENGINE=INNODB;")
-        
+
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
         "id_incident INT NOT NULL, "
@@ -60,7 +60,7 @@ class BothoundTools():
         "coordinate_x FLOAT," #Feature Index 11
         "coordinate_y FLOAT," #Feature Index 12
         "coordinate_z FLOAT," #Feature Index 13
-        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
         # CLUSTERS table
@@ -68,21 +68,21 @@ class BothoundTools():
         "id_incident INT NOT NULL, "
         "cluster_index INT NOT NULL, "
         "comment LONGTEXT, "
-        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
     def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
-            insert_sql = "insert into sessions values (" + str(id_incident) + ", 0, " 
+            insert_sql = "insert into sessions values (" + str(id_incident) + ", 0, "
             features = ip_feature_db[ip]
             insert_sql += "\"" + ip + "\","
-            
+
             for feature in features:
                 insert_sql += str(features[feature]) + ","
-                
+
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
-            
+
             self.cur.execute(insert_sql)
         self.db.commit()
 
@@ -114,11 +114,16 @@ class BothoundTools():
         self.cur.close()
         self.db.close()
 
-    def load_database_config(self, database_conf):        
+    def load_database_config(self, database_conf, elastic_db_conf):
         self.db_user = database_conf["user"]
         self.db_password = database_conf["password"]
         self.db_host = database_conf["host"]
         self.db_name = database_conf["name"]
+
+        #read elastic search user and password
+        self.es_user = elastic_db_conf["es_user"]
+        self.es_password = elastic_db_conf["es_password"]
+        self.es_user = elastic_db_conf["es_host"]
 
     def random_slicer(self, data_size, train_portion=0.5):
         """
@@ -138,33 +143,33 @@ class BothoundTools():
 
     """
     This method requires installation of the following packages.
-    It downloads the entire geo-location database, so its accessible offline. 
+    It downloads the entire geo-location database, so its accessible offline.
     pip install python-geoip
     pip install python-geoip-geolite2
     """
     @staticmethod
     def find_location(ip):
         from geoip import geolite2
-        
+
         match = geolite2.lookup(ip)
         return match.location
-    
+
     """
     Latitude and longitude are polar coordinates
-    So to use them as features in KMneas it is recommended to convert them into 
-    Cartesian coordinates, so that Euclidean distance between two points makes sense. 
+    So to use them as features in KMneas it is recommended to convert them into
+    Cartesian coordinates, so that Euclidean distance between two points makes sense.
     """
     @staticmethod
     def convert_to_cartesian(location):
         import math
-        
+
         latitude = location[0]
         longitude = location[1]
         # Spherical coordinates in Radians
         longitude_rad = longitude * (2 * math.pi)/360
         latitude_rad = (latitude * 2) * (2 * math.pi)/360
         R = (6378 + 6356)/2
-        
+
         # Cartesian coordinates
         cartesian = {};
         cartesian['x'] = R * math.cos(latitude_rad) * math.cos(longitude_rad)
@@ -173,7 +178,7 @@ class BothoundTools():
         return cartesian
 
     """
-    create a test incident and all the sessions from 
+    create a test incident and all the sessions from
     ../data/feature_db-files.txt
     """
     def get_test_incident(self):
@@ -204,18 +209,18 @@ class BothoundTools():
             useful_part = useful_part[:-2]
             new_split = useful_part.split(', ')
 
-            insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, " 
+            insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, "
             insert_sql += "\"" + str(line_number) + "\","
             line_number = line_number + 1
             for b in new_split:
                c = b.split(': ')[1]
                insert_sql += str(c) + ","
-                
+
             insert_sql += "0,0,0,"
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
             self.cur.execute(insert_sql)
-        
+
         self.db.commit()
         print "done."
         return id_incident
@@ -247,15 +252,15 @@ class BothoundTools():
         X = np.array(data_set)
 
         # Compute DBSCAN
-        db = DBSCAN(eps=0.1, min_samples=20).fit(X)        
+        db = DBSCAN(eps=0.1, min_samples=20).fit(X)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
-        print db 
+        print db
 
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-        print('Estimated number of clusters: %d' % n_clusters_)        
+        print('Estimated number of clusters: %d' % n_clusters_)
 
         #update the cluster column in session table
         for session, label in zip(sessions, labels):
@@ -264,11 +269,9 @@ class BothoundTools():
         self.db.commit()
 
 
-    def __init__(self, database_conf):
+    def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
         #config in the constructor
-        self.load_database_config(database_conf)
-        pass
-
-
+        self.result_dir = conf["result_dir"]
+        self.load_database_config(conf["database"], conf["elastic_db"])

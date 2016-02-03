@@ -14,7 +14,7 @@ es = Elasticsearch(
     ca_certs=certifi.where()
 )
 
-def query_result(interval, start, end):
+def query_es_for_deflect_logs(interval, start, end):
     return es.search(index="", body =
                      #add index between the quotation marks
 {
@@ -26,8 +26,8 @@ def query_result(interval, start, end):
         "filter": {
           "range": {
             "@timestamp": {
-               "gte": 1451566081000,
-               "lte": 1451566082001,
+               "gte": start,
+               "lte": end,
                #timestamps are for start/end date in epoch format. this format should be changed for other dates (current one is for 31.12.2015)
                "format": "epoch_millis"
                #format could be changed, but for now keeping the epoch + millisecond one

@@ -63,3 +63,6 @@ target/
 *~
 \#*\#
 .\#*
+
+#not givig away sensetive info
+conf/bothound.yaml
