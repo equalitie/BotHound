@@ -46,19 +46,19 @@ class ATSRecord:
             # lex.quotes = '"'
             # lex.whitespace_split = '.'
             # tokenised_payload = list(lex)
-	    #return '' if len(tokenised_payload) <= 0 else tokenised_payload[payloadIndex]
+        #return '' if len(tokenised_payload) <= 0 else tokenised_payload[payloadIndex]
             if len(self.tokenised_payload) <= 0:
                 self.tokenized_payload = [''] * ATS_NO_FIELDS
-	except ValueError, err:
+        except ValueError, err:
             print(str(err))
             #for debug purpose
             print self.payload
             return '' #Return empty in case of error maintainig normal
                       #behavoir so the program doesn't crash
     def get_UA(self):
-	"""
-	Return the User Agent for this payload
-	"""
+        """
+        Return the User Agent for this payload
+        """
         return self.payload["agent"]
 
     def time_to_second(self):
@@ -75,25 +75,32 @@ class ATSRecord:
         return mktime(digested_time)
 
     def get_doc_type(self):
-	"""
-	Retrieves the document type, if present, for the current payload
-	"""
+        """
+        Retrieves the document type, if present, for the current payload
+        """
         return self.payload["type"]
 
     def get_payload_size(self):
-	"""
-	Retrieves the payload size, if present, for the current payload
-	"""
+        """
+        Retrieves the payload size, if present, for the current payload
+        """
         return self.payload["size"]
 
     def get_http_status_code(self):
-	"""
-	Retrieves the HTTP status code, if present, for the current payload
-	"""
+        """
+        Retrieves the HTTP status code, if present, for the current payload
+        """
         return self.payload["status"]
 
     def get_requested_element(self):
-	"""
-	Retrieves the requested uri, if present, for the current payload
-	"""
+        """
+        Retrieves the requested uri, if present, for the current payload
+        """
         return self.payload["request"]
+
+    def get_target(self):
+        """
+        Retrieves the requested target domain, if present, for the current payload
+        """
+        return self.payload["referrer"]
+

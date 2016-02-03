@@ -22,9 +22,6 @@ from features.src.feature_average_request_interval import FeatureAverageRequestI
 from features.src.feature_cycling_user_agent import FeatureCyclingUserAgent
 from features.src.feature_html_to_image_ratio import FeatureHtmlToImageRatio
 from features.src.feature_HTTP_response_code_rate import FeatureHTTPResponseCodeRate
-from features.src.feature_longitude_latitude_x import FeatureLongitudeLatitudeX
-from features.src.feature_longitude_latitude_y import FeatureLongitudeLatitudeY
-from features.src.feature_longitude_latitude_z import FeatureLongitudeLatitudeZ
 from features.src.feature_payload_size_average import FeaturePayloadSizeAverage
 from features.src.feature_percentage_consecutive_requests import FeaturePercentageConsecutiveRequests
 from features.src.feature_request_depth import FeatureRequestDepth
@@ -32,6 +29,7 @@ from features.src.feature_request_depth_std import FeatureRequestDepthStd
 from features.src.feature_session_length import FeatureSessionLength
 from features.src.feature_user_agent import FeatureUserAgent
 from features.src.feature_variance_request_interval import FeatureVarianceRequestInterval
+from features.src.feature_geo import FeatureGEO
 from ats_record import ATSRecord
 from logfetcher import LogFetcher
 
