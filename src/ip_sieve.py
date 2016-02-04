@@ -157,6 +157,9 @@ class IPSieve():
 
         self.dict_invalid = False
 
+    def parse_es_log(self):
+        pass
+
     def ordered_records(self):
         """
         Wrapper for the record dictionary

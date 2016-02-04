@@ -57,60 +57,71 @@ class SessionExtractor():
         """
         utc_datetime = datetime.datetime.utcnow()
         self.bothound_tools = bothound_tools
-        self.bothound_tools.connect_to_db()
-
         self.base_analyse_log_file = self.bothound_tools.result_dir + 'base_analyse_' + str(utc_datetime)
+        self.es_handler = es_handler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+            bothound_tools.es_host, self.bothound_tools.es_port)
 
-    def _process_incident(self, start,end):
+    def process_incident(self, id_incident):
         """
         get the incident time from the db and gathers all features
 
         INPUT:
             log_files: the logs that we went through it.
         """
-        #this is not a oop way of retrieving the logs but I think we are
-        #avoiding db access in other classes beside l2btools
-        ip_feature_db = {}
-        ip_sieve = IPSieve()
-        cur_incident_logs = es_handler.quary_deflect_logs(start, end)
+        incident = bothound_tools.get_incident(id_incident)
+        if(incident is None):
+            return 
 
-        #if there is no log associated to this experiment then there is nothing
-        #to do
-        if len(cur_incident_logs_logs) == 0:
-            logging.info("Giving up on experiment %i with no training log"%self.expr_dict['id'])
-            return
+        # process indident times
+        start = 1451560001000
+        stop = 1451566082001
+
+        ip_sieve = IPSieve()
+        ip_sieve.parse_es_log(self.es_handler.quary_deflect_logs(start, end))
+        ordered_records = ip_sieve.ordered_records()
+
+        ip_feature_db = {}
 
         #At this stage it is only a peliminary list we might lose features
         #due to 0 variance
         self._active_feature_list = []
         #do a dry run on all features just to gather the indeces of all available
         #features
-        for CurrentFeatureType in Learn2BanFeature.__subclasses__():
-            cur_feature_tester = CurrentFeatureType(self.ip_sieve, self.ip_feature_db)
-            self._active_feature_list.append(cur_feature_tester._FEATURE_INDEX)
+        for CurentFeature in Learn2BanFeature.__subclasses__():
+            f = CurentFeature(ordered_records, ip_feature_db)
+            self._active_feature_list.append(f._FEATURE_INDEX)
 
-        ip_sieve.parse_es_log(cur_experiment_logs)
 
-        for CurrentFeatureType in Learn2BanFeature.__subclasses__():
-            cur_feature_tester = CurrentFeatureType(ip_sieve, ip_feature_db)
-            logging.info("Computing feature %i..."%cur_feature_tester._FEATURE_INDEX)
-            cur_feature_tester.compute()
+        for CurentFeature in Learn2BanFeature.__subclasses__():
+            f = CurentFeature(ordered_records, ip_feature_db)
+            logging.info("Computing feature %i..."% f._FEATURE_INDEX)
+            f.compute()
 
-            # we have memory problem here :(
-            # import objgraph
-            # objgraph.show_refs([self.ip_sieve._ordered_records], filename='ips-graph.png')
+        # we have memory problem here :(
+        # import objgraph
+        # objgraph.show_refs([self.ip_sieve._ordered_records], filename='ips-graph.png')
         return ip_feature_db
 
+    def get_ip_logs(self, start, end):
+        ip_sieve = IPSieve()
+        ip_sieve.parse_es_log(self.es_handler.quary_deflect_logs(start, end))
+        return ip_sieve.ordered_records()
+
     def extract(self):
+
+        # unit test
+        self._process_incident(1451560001000, 1451566082001)
+
         """
         check all incidents which needs to be processed and compute the features on them
         finally store the sessions in the db
+        """
         """
         #this make more sense to happens in the constructor however,
         for incident in bothound_tools.get_incidents(processed = True):
             cur_session_feature_db = self._process_incident(incident["start"], incident["stop"])
             self._store_session(incident_id, cur_session_feature_db);
-
+        """
 
     def store_results(self, session_feature_db):
         # Add the result to the database
@@ -123,6 +134,7 @@ if __name__ == "__main__":
     conf = yaml.load(stram)
 
     bothound_tools = BothoundTools(conf)
+    self.bothound_tools.connect_to_db()
 
     session_extractor = SessionExtractor(bothound_tools)
     session_extractor.extract()

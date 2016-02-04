@@ -24,7 +24,7 @@ sniffers:
     logfile: logfetcher.log
 
 elastic_db:
-    es_user:
-    es_password:
-    es_host:
+    user:
+    password:
+    host:
     

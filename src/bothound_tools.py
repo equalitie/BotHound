@@ -101,6 +101,13 @@ class BothoundTools():
 
         return incidents
 
+    def get_incident(self, id):
+        self.cur.execute("select id, start, stop from incidents WHERE id = %d" % id)
+        incident = None
+        for row in self.cur.fetchall():
+            incident = row
+        return incident
+
     def get_processed_incidents(self):
         return self.get_incidents(True)
 
@@ -119,11 +126,19 @@ class BothoundTools():
         self.db_password = database_conf["password"]
         self.db_host = database_conf["host"]
         self.db_name = database_conf["name"]
+        if("port" in database_conf):
+            self.db_port = database_conf["port"]
+        else:
+            self.db_port = 3306
 
         #read elastic search user and password
-        self.es_user = elastic_db_conf["es_user"]
-        self.es_password = elastic_db_conf["es_password"]
-        self.es_user = elastic_db_conf["es_host"]
+        self.es_user = elastic_db_conf["user"]
+        self.es_password = elastic_db_conf["password"]
+        self.es_user = elastic_db_conf["host"]
+        if("port" in elastic_db_conf):
+            self.es_port = elastic_db_conf["port"]
+        else:
+            self.es_port = 9200
 
     def random_slicer(self, data_size, train_portion=0.5):
         """
