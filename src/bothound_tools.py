@@ -64,7 +64,7 @@ class BothoundTools():
         "percentage_cons_requests FLOAT," #Feature Index 10
         "latitude FLOAT," #Feature Index 11
         "longitude FLOAT," #Feature Index 12
-        "country VARCHAR(40)," #Feature Index 13
+        "id_country INT," #Feature Index 13
         "id_deflectee INT," #Feature Index 14
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
@@ -83,9 +83,29 @@ class BothoundTools():
         "comment LONGTEXT, "
         "PRIMARY KEY(id)) ENGINE=INNODB;")
 
+        # COUNTRIES table
+        self.cur.execute("create table IF NOT EXISTS countries (id INT NOT NULL AUTO_INCREMENT, "
+        "code LONGTEXT, "
+        "name LONGTEXT, "
+        "PRIMARY KEY(id)) ENGINE=INNODB;")
+
     def get_deflectees(self):
         self.cur.execute("select * from deflectees")
         return [dict(elem) for elem in self.cur.fetchall()]
+
+    def get_countries(self):
+        self.cur.execute("select * from countries")
+        return [dict(elem) for elem in self.cur.fetchall()]
+
+    """
+    Post process features calculated by "lear2bat_feature" class instances
+    """
+    def post_process(self, ip_feature_db):
+        # factorize the deflectees
+        ip_feature_db = self.factorize_deflectees(ip_feature_db)
+
+        # factorize the deflectees
+        ip_feature_db = self.factorize_countries(ip_feature_db)
 
     """
     Replace domain string value in ip_feature_db with the appropriate 
@@ -104,6 +124,8 @@ class BothoundTools():
         for ip in ip_feature_db:
             features = ip_feature_db[ip]
             domain = features[feature_index] 
+            if(isinstance(domain, str) == False):
+                continue
 
             if(domain in ids):
                 features[feature_index] = ids[domain]
@@ -115,6 +137,35 @@ class BothoundTools():
 
         return ip_feature_db
         
+    """
+    Replace country string value in ip_feature_db with the appropriate 
+    ID from countreis table.
+    Create new rows in countreis table if necessary
+    """
+    def factorize_countreis(self, ip_feature_db):
+        countreis = self.get_countries()
+
+        ids = {}
+        for c in countries:
+            ids[c["code"]] = d['id']
+
+        feature_index = FeatureGEO({},{}).get_index() + 2
+
+        for ip in ip_feature_db:
+            features = ip_feature_db[ip]
+            country_code = features[feature_index] 
+            if(isinstance(country_code, str) == False):
+                continue
+
+            if(country_code in ids):
+                features[feature_index] = ids[country_code]
+            else:
+                self.cur.execute("insert into countreis(code) values ('{}')".format(country_code))
+                ids[country_code] = self.cur.lastrowid
+                features[feature_index] = self.cur.lastrowid
+                self.db.commit()
+
+        return ip_feature_db
 
     def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
@@ -229,7 +280,7 @@ class BothoundTools():
                c = b.split(': ')[1]
                insert_sql += str(c) + ","
                 
-            insert_sql += "0,0,\"\",0,"
+            insert_sql += "0,0,0,0,"
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
             self.cur.execute(insert_sql)
