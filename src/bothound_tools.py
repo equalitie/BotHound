@@ -134,7 +134,7 @@ class BothoundTools():
         #read elastic search user and password
         self.es_user = elastic_db_conf["user"]
         self.es_password = elastic_db_conf["password"]
-        self.es_user = elastic_db_conf["host"]
+        self.es_host = elastic_db_conf["host"]
         if("port" in elastic_db_conf):
             self.es_port = elastic_db_conf["port"]
         else:
@@ -288,5 +288,4 @@ class BothoundTools():
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
         #config in the constructor
-        self.result_dir = conf["result_dir"]
         self.load_database_config(conf["database"], conf["elastic_db"])

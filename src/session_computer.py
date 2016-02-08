@@ -39,7 +39,7 @@ from features.src.learn2ban_feature import Learn2BanFeature
 #train to ban and other tools
 from training_set import TrainingSet
 
-import util.es_handler as es_handler
+from util.es_handler import ESHandler
 
 from bothound_tools import BothoundTools
 
@@ -57,8 +57,7 @@ class SessionExtractor():
         """
         utc_datetime = datetime.datetime.utcnow()
         self.bothound_tools = bothound_tools
-        self.base_analyse_log_file = self.bothound_tools.result_dir + 'base_analyse_' + str(utc_datetime)
-        self.es_handler = es_handler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+        self.es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
             bothound_tools.es_host, self.bothound_tools.es_port)
 
     def process_incident(self, id_incident):
@@ -74,11 +73,15 @@ class SessionExtractor():
 
         # process indident times
         start = 1451560001000
-        stop = 1451566082001
+        stop =  1451560001000
+
+
+        logs = self.es_handler.get_logs(start, stop)
 
         ip_sieve = IPSieve()
-        ip_sieve.parse_es_log(self.es_handler.quary_deflect_logs(start, end))
-        ordered_records = ip_sieve.ordered_records()
+        ip_sieve.set_log_lines(logs)
+        ip_sieve.parse_elastic_search_log()
+        ip_ats_records = ip_sieve.ordered_records()
 
         ip_feature_db = {}
 
@@ -88,15 +91,18 @@ class SessionExtractor():
         #do a dry run on all features just to gather the indeces of all available
         #features
         for CurentFeature in Learn2BanFeature.__subclasses__():
-            f = CurentFeature(ordered_records, ip_feature_db)
+            print "CurentFeature %s..."% CurentFeature
+            f = CurentFeature(ip_ats_records, ip_feature_db)
             self._active_feature_list.append(f._FEATURE_INDEX)
 
 
         for CurentFeature in Learn2BanFeature.__subclasses__():
-            f = CurentFeature(ordered_records, ip_feature_db)
-            logging.info("Computing feature %i..."% f._FEATURE_INDEX)
+            f = CurentFeature(ip_ats_records, ip_feature_db)
+            #logging.info("Computing feature %i..."% f._FEATURE_INDEX)
+            print "Computing feature %i..."% f._FEATURE_INDEX
             f.compute()
 
+        print 'ip_feature_db', ip_feature_db
         # we have memory problem here :(
         # import objgraph
         # objgraph.show_refs([self.ip_sieve._ordered_records], filename='ips-graph.png')
@@ -110,7 +116,7 @@ class SessionExtractor():
     def extract(self):
 
         # unit test
-        self._process_incident(1451560001000, 1451566082001)
+        return self.process_incident(self.bothound_tools.get_test_incident())
 
         """
         check all incidents which needs to be processed and compute the features on them
@@ -130,11 +136,15 @@ class SessionExtractor():
 
 if __name__ == "__main__":
 
-    stram = open("./conf/bothound.yaml", "r")
+    stram = open("../conf/bothound.yaml", "r")
     conf = yaml.load(stram)
 
     bothound_tools = BothoundTools(conf)
-    self.bothound_tools.connect_to_db()
+    bothound_tools.connect_to_db()
 
     session_extractor = SessionExtractor(bothound_tools)
-    session_extractor.extract()
+    ip_feature_db = session_extractor.extract()
+
+    print ip_feature_db
+
+

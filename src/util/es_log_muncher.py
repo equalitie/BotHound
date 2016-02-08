@@ -2,8 +2,6 @@
 Simply getting the relevant fields from es data and put them into
 ats record
 """
-from os.path import dirname
-
 UNREASANABLE_SIZE = 100*1024*1024 #100MB
 NORMAL_HTTP_METHODS = ["GET", "HEAD", "POST"]
 VALID_HTTP_METHODS = ["OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT", "PROPFIND", "PROPPATCH", "MKCOL", "COPY", "MOVE", "LOCK", "UNLOCK", "VERSION-CONTROL", "REPORT", "CHECKOUT", "CHECKIN", "UNCHECKOUT", "MKWORKSPACE", "UPDATE", "LABEL", "MERGE", "BASELINE-CONTROL", "MKACTIVITY", "ORDERPATCH", "ACL"]
@@ -57,6 +55,15 @@ def parse_es_json_object(hit_json_object):
 
     timestamp = res["@timestamp"]
     ats_res["time"] = timestamp[:timestamp.find('.000Z')] + "Z"
+
+    if('geoip' in res):
+        geoip = res['geoip']
+        if('country_code2' in geoip):
+            ats_res['country_code'] = geoip['country_code2']
+        if('city_name' in geoip):
+            ats_res['city'] = geoip['city_name']
+        if('location' in geoip):
+            ats_res['location'] = geoip['location']
 
     return ats_res;
 

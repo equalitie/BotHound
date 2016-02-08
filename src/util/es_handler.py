@@ -11,19 +11,19 @@ class ESHandler:
         Get the credential and makes the elastic search object for later
         queries
         """
-        pdb.set_trace()
-        es = Elasticsearch(
-            '[...]',        # name of node to be added here 'http(s)://user:password@server:port']
-            port= 9200, #add the port number,
+        self.es = Elasticsearch(
+            [es_host],        # name of node to be added here 'http(s)://user:password@server:port']
+            http_auth=(es_user, es_password),
+            port= es_port, #add the port number,
             use_ssl=True,
             verify_certs=True,
-            ca_certs=certifi.where()
+            ca_certs=certifi.where())
 
     def get_logs(self, start, end):
         """
         Get deflect log from es
         """
-        return es.search(index="deflect.log-2015.12.31", body =
+        return self.es.search(index="deflect.log-2015.12.31", body =
             #add index between the quotation marks
             {
             "from" : 0, "size" : 10000,
