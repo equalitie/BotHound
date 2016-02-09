@@ -56,7 +56,7 @@ def main():
             logger.addHandler(hdlr)
             logger.setLevel(logging.DEBUG)
 
-    tools = BothoundTools(conf["database"])
+    tools = BothoundTools(conf)
     tools.connect_to_db()
 
     #

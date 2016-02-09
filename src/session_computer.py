@@ -29,6 +29,7 @@ sys.path.append(src_dir)
 import numpy as np
 import logging
 import datetime
+import calendar
 
 #learn2ban classes:
 from ip_sieve import IPSieve
@@ -72,29 +73,26 @@ class SessionExtractor():
         self.es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
             bothound_tools.es_host, self.bothound_tools.es_port)
 
-    def process_incident(self, id_incident):
+    def process_incident(self, incident):
         """
         get the incident time from the db and gathers all features
 
         INPUT:
             log_files: the logs that we went through it.
         """
-        incident = bothound_tools.get_incident(id_incident)
         if(incident is None):
             return 
 
-        # process indident times
-        start = 1451560001000
-        stop =  1451560001000
+        #start = 1451560001000
+        #stop =  1451560001000
 
+        # get the logs from ES
+        logs = self.es_handler.get_logs(incident['start'], incident['stop'])
 
-        logs = self.es_handler.get_logs(start, stop)
+        # calculate IP dictionary with ATS records
+        ip_records = self.get_ip_records(logs)
 
-        ip_sieve = IPSieve()
-        ip_sieve.set_log_lines(logs)
-        ip_sieve.parse_elastic_search_log()
-        ip_ats_records = ip_sieve.ordered_records()
-
+        # calculate features
         ip_feature_db = {}
 
         #At this stage it is only a peliminary list we might lose features
@@ -103,43 +101,41 @@ class SessionExtractor():
         #do a dry run on all features just to gather the indeces of all available
         #features
         for CurentFeature in Learn2BanFeature.__subclasses__():
-            print "CurentFeature %s..."% CurentFeature
-            f = CurentFeature(ip_ats_records, ip_feature_db)
+            f = CurentFeature(ip_records, ip_feature_db)
             self._active_feature_list.append(f._FEATURE_INDEX)
 
-
         for CurentFeature in Learn2BanFeature.__subclasses__():
-            f = CurentFeature(ip_ats_records, ip_feature_db)
+            f = CurentFeature(ip_records, ip_feature_db)
             #logging.info("Computing feature %i..."% f._FEATURE_INDEX)
             print "Computing feature %i..."% f._FEATURE_INDEX
             f.compute()
 
-        print 'ip_feature_db', ip_feature_db
-        # we have memory problem here :(
-        # import objgraph
-        # objgraph.show_refs([self.ip_sieve._ordered_records], filename='ips-graph.png')
+        # post process the features
+        ip_feature_db = self.bothound_tools.post_process(ip_feature_db)
+
+        # delete the old sessions for thie incidend
+        self.bothound_tools.delete_sessions(incident['id'])
+
+        #print ip_feature_db
+        self.bothound_tools.add_sessions(incident['id'], ip_feature_db)
+
         return ip_feature_db
 
-    def get_ip_logs(self, start, end):
+    def get_ip_records(self, logs):
         ip_sieve = IPSieve()
-        ip_sieve.parse_es_log(self.es_handler.quary_deflect_logs(start, end))
+        ip_sieve.set_log_lines(logs)
+        ip_sieve.parse_elastic_search_log()
         return ip_sieve.ordered_records()
 
     def extract(self):
-
-        # unit test
-        return self.process_incident(self.bothound_tools.get_test_incident())
-
         """
         check all incidents which needs to be processed and compute the features on them
         finally store the sessions in the db
         """
-        """
         #this make more sense to happens in the constructor however,
         for incident in bothound_tools.get_incidents(processed = True):
-            cur_session_feature_db = self._process_incident(incident["start"], incident["stop"])
-            self._store_session(incident_id, cur_session_feature_db);
-        """
+            cur_session_feature_db = self.process_incident(incident)
+        
 
     def store_results(self, session_feature_db):
         # Add the result to the database
@@ -155,8 +151,6 @@ if __name__ == "__main__":
     bothound_tools.connect_to_db()
 
     session_extractor = SessionExtractor(bothound_tools)
-    ip_feature_db = session_extractor.extract()
-
-    print ip_feature_db
+    session_extractor.extract()
 
 

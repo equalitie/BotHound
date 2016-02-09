@@ -22,7 +22,7 @@ def parse_es_json_object(hit_json_object):
     ats_res["request"] = res["client_url"]
 
     if ats_res["method"] not in VALID_HTTP_METHODS:
-        print "ignoring request with invalid method %s in %s"%(ats_res["method"],line)
+        print "ignoring request with invalid method %s"%(ats_res["method"])
         return None
     elif ats_res["method"] not in NORMAL_HTTP_METHODS:
         print "abnormal http request, somebody messing around?:", line

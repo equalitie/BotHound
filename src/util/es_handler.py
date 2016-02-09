@@ -19,11 +19,16 @@ class ESHandler:
             verify_certs=True,
             ca_certs=certifi.where())
 
-    def get_logs(self, start, end):
+    def get_logs(self, start, stop):
         """
         Get deflect log from es
         """
-        return self.es.search(index="deflect.log-2015.12.31", body =
+        ts_start = 1000*calendar.timegm(start.timetuple())
+        ts_stop = 1000*calendar.timegm(stop.timetuple())
+
+        cur_index = start.strftime('deflect.log-%Y.%m.%d')
+
+        return self.es.search(index=cur_index, body =
             #add index between the quotation marks
             {
             "from" : 0, "size" : 10000,
@@ -34,8 +39,8 @@ class ESHandler:
             "filter": {
                 "range": {
                 "@timestamp": {
-                    "gte": start,
-                    "lte": end,
+                    "gte": ts_start,
+                    "lte": ts_stop,
             #timestamps are for start/end date in epoch format. this format should be changed for other dates (current one is for 31.12.2015)
             "format": "epoch_millis"
                    #format could be changed, but for now keeping the epoch + millisecond one

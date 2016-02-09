@@ -69,27 +69,33 @@ class FeatureGEO(Learn2BanFeature):
         ip_recs = self._ip_recs
 
         for cur_ip_rec in ip_recs:
-            sample_size = len(ip_recs[cur_ip_rec])
+            recs = ip_recs[cur_ip_rec]
+            sample_size = len(recs)
             if sample_size < 1:
                 self.append_feature(cur_ip_rec, 0)
                 return
-            
-            # skip if ats record already has geo info
-            if("location" in cur_ip_rec):
-                self._FEATURE_INDEX = 12            
-                self.append_feature(cur_ip_rec, cur_ip_rec['location'][0])
-                self._FEATURE_INDEX = 13
-                self.append_feature(cur_ip_rec, cur_ip_rec['location'][1])
-                self._FEATURE_INDEX = 14
-                self.append_feature(cur_ip_rec, cur_ip_rec['country_code'])
-            else:
-                match = FeatureGEO.find_location(cur_ip_rec);
-                self._FEATURE_INDEX = 12            
-                self.append_feature(cur_ip_rec, match['latitude'])
-                self._FEATURE_INDEX = 13
-                self.append_feature(cur_ip_rec, match['longitude'])
-                self._FEATURE_INDEX = 14
-                self.append_feature(cur_ip_rec, match['country'])
+
+            for ats in ip_recs[cur_ip_rec]:
+                payload = ats.payload
+                # skip if ats record already has geo info
+                if("location" in payload):
+                    self._FEATURE_INDEX = 12            
+                    self.append_feature(cur_ip_rec, payload['location'][0])
+                    self._FEATURE_INDEX = 13
+                    self.append_feature(cur_ip_rec, payload['location'][1])
+                    self._FEATURE_INDEX = 14
+                    self.append_feature(cur_ip_rec, payload['country_code'])
+                else:
+                    match = FeatureGEO.find_location(cur_ip_rec[0]);
+                    self._FEATURE_INDEX = 12            
+                    self.append_feature(cur_ip_rec, match['latitude'])
+                    self._FEATURE_INDEX = 13
+                    self.append_feature(cur_ip_rec, match['longitude'])
+                    self._FEATURE_INDEX = 14
+                    self.append_feature(cur_ip_rec, match['country'])
+                break
 
             self._FEATURE_INDEX = 12
             
+
+

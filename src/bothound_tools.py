@@ -107,6 +107,8 @@ class BothoundTools():
         # factorize the deflectees
         ip_feature_db = self.factorize_countries(ip_feature_db)
 
+        return ip_feature_db
+
     """
     Replace domain string value in ip_feature_db with the appropriate 
     ID from deflectees table.
@@ -124,7 +126,7 @@ class BothoundTools():
         for ip in ip_feature_db:
             features = ip_feature_db[ip]
             domain = features[feature_index] 
-            if(isinstance(domain, str) == False):
+            if(isinstance(domain, ( int, long ) ) == True):
                 continue
 
             if(domain in ids):
@@ -142,42 +144,48 @@ class BothoundTools():
     ID from countreis table.
     Create new rows in countreis table if necessary
     """
-    def factorize_countreis(self, ip_feature_db):
-        countreis = self.get_countries()
+    def factorize_countries(self, ip_feature_db):
+        countries = self.get_countries()
 
         ids = {}
         for c in countries:
-            ids[c["code"]] = d['id']
+            ids[c["code"]] = c['id']
 
         feature_index = FeatureGEO({},{}).get_index() + 2
 
         for ip in ip_feature_db:
             features = ip_feature_db[ip]
             country_code = features[feature_index] 
-            if(isinstance(country_code, str) == False):
+            if(isinstance(country_code, ( int, long ) ) == True):
                 continue
 
             if(country_code in ids):
                 features[feature_index] = ids[country_code]
             else:
-                self.cur.execute("insert into countreis(code) values ('{}')".format(country_code))
+                self.cur.execute("insert into countries(code) values ('{}')".format(country_code))
                 ids[country_code] = self.cur.lastrowid
                 features[feature_index] = self.cur.lastrowid
                 self.db.commit()
 
         return ip_feature_db
 
+    def delete_sessions(self, id_incident):
+        self.cur.execute("DELETE FROM sessions WHERE id_incident = {0}".format(id_incident))
+        self.db.commit()
+
     def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
-            insert_sql = "insert into sessions values (" + str(id_incident) + ", 0, "
+            insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, "
             features = ip_feature_db[ip]
-            insert_sql += "\"" + ip + "\","
+            ip_hash = "555"
+            insert_sql += "\"" + ip_hash + "\","
 
             for feature in features:
                 insert_sql += str(features[feature]) + ","
 
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
+            print insert_sql
 
             self.cur.execute(insert_sql)
         self.db.commit()

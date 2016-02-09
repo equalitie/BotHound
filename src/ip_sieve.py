@@ -165,6 +165,7 @@ class IPSieve():
         #we are going to keep track of each ip and last session number corresponding
         #to that ip
         ip_session_tracker = {}
+        total_failure_munches = 0
         for cur_rec in hits:
             new_session = False
             cur_rec_dict = util.es_log_muncher.parse_es_json_object(cur_rec)
@@ -172,15 +173,6 @@ class IPSieve():
             if cur_rec_dict:
                 cur_ip = cur_rec_dict["host"];
                 cur_ats_rec = ATSRecord(cur_rec_dict);
-
-
-                if not cur_ip in self._ordered_records:
-                    self._ordered_records[cur_ip] = [cur_ats_rec]
-                else:
-                    self._ordered_records[cur_ip].append(cur_ats_rec)
-
-
-                """
 
                 if not cur_ip in ip_session_tracker:
                     ip_session_tracker[cur_ip] = 0
@@ -202,7 +194,6 @@ class IPSieve():
                     self._ordered_records[(cur_ip, ip_session_tracker[cur_ip])] = [cur_ats_rec]
                 else:
                     self._ordered_records[(cur_ip, ip_session_tracker[cur_ip])].append(cur_ats_rec)
-                """
             else:
                 #unable to munch and grasp the data due to unrecognizable format
                 total_failure_munches += 1
