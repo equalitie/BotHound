@@ -65,6 +65,8 @@ def parse_es_json_object(hit_json_object):
         if('location' in geoip):
             ats_res['location'] = geoip['location']
 
+    ats_res['client_request_host'] = res['client_request_host']
+
     return ats_res;
 
 if __name__ == "__main__":

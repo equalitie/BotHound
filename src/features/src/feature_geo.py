@@ -74,14 +74,22 @@ class FeatureGEO(Learn2BanFeature):
                 self.append_feature(cur_ip_rec, 0)
                 return
             
-            match = find_location(cur_ip_rec);
-
-            self._FEATURE_INDEX = 12            
-            self.append_feature(cur_ip_rec, match['latitude'])
-            self._FEATURE_INDEX = 13
-            self.append_feature(cur_ip_rec, match['longitude'])
-            self._FEATURE_INDEX = 14
-            self.append_feature(cur_ip_rec, match['country'])
+            # skip if ats record already has geo info
+            if("location" in cur_ip_rec):
+                self._FEATURE_INDEX = 12            
+                self.append_feature(cur_ip_rec, cur_ip_rec['location'][0])
+                self._FEATURE_INDEX = 13
+                self.append_feature(cur_ip_rec, cur_ip_rec['location'][1])
+                self._FEATURE_INDEX = 14
+                self.append_feature(cur_ip_rec, cur_ip_rec['country_code'])
+            else:
+                match = FeatureGEO.find_location(cur_ip_rec);
+                self._FEATURE_INDEX = 12            
+                self.append_feature(cur_ip_rec, match['latitude'])
+                self._FEATURE_INDEX = 13
+                self.append_feature(cur_ip_rec, match['longitude'])
+                self._FEATURE_INDEX = 14
+                self.append_feature(cur_ip_rec, match['country'])
 
             self._FEATURE_INDEX = 12
             

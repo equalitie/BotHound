@@ -15,19 +15,16 @@ class FeatureDeflectee(Learn2BanFeature):
         self._FEATURE_INDEX = 15 
 
     def compute(self):
-        if(self.deflectees is None):
-            return
-
         ip_recs = self._ip_recs
 
         for cur_ip_rec in ip_recs:
-            domain = ""
+            requested_host = ""
             for payload in ip_recs[cur_ip_rec]:
                 # we tale the first one hoping the rest are the same
-                domain = payload.get_target()
+                requested_host = payload.get_requested_host()
                 break
 
-            self.append_feature(cur_ip_rec, domain)
+            self.append_feature(cur_ip_rec, requested_host)
 
 
 

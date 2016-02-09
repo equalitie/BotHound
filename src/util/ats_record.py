@@ -98,9 +98,9 @@ class ATSRecord:
         """
         return self.payload["request"]
 
-    def get_target(self):
+    def get_requested_host(self):
         """
         Retrieves the requested target domain, if present, for the current payload
         """
-        return self.payload["referrer"]
+        return self.payload["client_request_host"]
 
