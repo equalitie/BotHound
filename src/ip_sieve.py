@@ -173,6 +173,15 @@ class IPSieve():
                 cur_ip = cur_rec_dict["host"];
                 cur_ats_rec = ATSRecord(cur_rec_dict);
 
+
+                if not cur_ip in self._ordered_records:
+                    self._ordered_records[cur_ip] = [cur_ats_rec]
+                else:
+                    self._ordered_records[cur_ip].append(cur_ats_rec)
+
+
+                """
+
                 if not cur_ip in ip_session_tracker:
                     ip_session_tracker[cur_ip] = 0
                     new_session = True
@@ -193,7 +202,7 @@ class IPSieve():
                     self._ordered_records[(cur_ip, ip_session_tracker[cur_ip])] = [cur_ats_rec]
                 else:
                     self._ordered_records[(cur_ip, ip_session_tracker[cur_ip])].append(cur_ats_rec)
-
+                """
             else:
                 #unable to munch and grasp the data due to unrecognizable format
                 total_failure_munches += 1
