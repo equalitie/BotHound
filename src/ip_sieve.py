@@ -9,8 +9,9 @@ AUTHORS:
 
 """
 
-from tools.apache_log_muncher import parse_line as parse_apache_line
-from tools.ats_record import ATSRecord
+from util.apache_log_muncher import parse_line as parse_apache_line
+from util.ats_record import ATSRecord
+import util.es_log_muncher 
 
 class IPSieve():
     DEAD_SESSION_PAUSE  = 1800 #minimum number of seconds between two session
@@ -156,6 +157,56 @@ class IPSieve():
                 self._ordered_records[cur_ip].append(cur_ats_rec)
 
         self.dict_invalid = False
+
+    def parse_elastic_search_log(self):
+        print "Parsing... "
+        hits = self._log_lines['hits']['hits']
+
+        #we are going to keep track of each ip and last session number corresponding
+        #to that ip
+        ip_session_tracker = {}
+        for cur_rec in hits:
+            new_session = False
+            cur_rec_dict = util.es_log_muncher.parse_es_json_object(cur_rec)
+
+            if cur_rec_dict:
+                cur_ip = cur_rec_dict["host"];
+                cur_ats_rec = ATSRecord(cur_rec_dict);
+
+
+                if not cur_ip in self._ordered_records:
+                    self._ordered_records[cur_ip] = [cur_ats_rec]
+                else:
+                    self._ordered_records[cur_ip].append(cur_ats_rec)
+
+
+                """
+
+                if not cur_ip in ip_session_tracker:
+                    ip_session_tracker[cur_ip] = 0
+                    new_session = True
+
+                #now we are checking if we hit a new session
+                #if we already decided that we are in a new session then there is nothing
+                #to investigate
+                if not new_session:
+                    #so we have a session already recorded, compare
+                    #the time of that last record of that session with
+                    #this session
+                    if cur_ats_rec.time_to_second() - self._ordered_records[(cur_ip, ip_session_tracker[cur_ip])][-1].time_to_second() > self.DEAD_SESSION_PAUSE:
+                        #the session is dead we have to start a new session
+                        ip_session_tracker[cur_ip] += 1
+                        new_session = True
+
+                if new_session:
+                    self._ordered_records[(cur_ip, ip_session_tracker[cur_ip])] = [cur_ats_rec]
+                else:
+                    self._ordered_records[(cur_ip, ip_session_tracker[cur_ip])].append(cur_ats_rec)
+                """
+            else:
+                #unable to munch and grasp the data due to unrecognizable format
+                total_failure_munches += 1
+
 
     def ordered_records(self):
         """

@@ -46,7 +46,7 @@ class BothoundTools():
         "processed BOOL,"
         "PRIMARY KEY(id)) "
         "ENGINE=INNODB;")
-        
+
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
         "id_incident INT NOT NULL, "
@@ -74,7 +74,7 @@ class BothoundTools():
         "id_incident INT NOT NULL, "
         "cluster_index INT NOT NULL, "
         "comment LONGTEXT, "
-        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
         # DEFLECTEES table
@@ -169,16 +169,16 @@ class BothoundTools():
 
     def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
-            insert_sql = "insert into sessions values (" + str(id_incident) + ", 0, " 
+            insert_sql = "insert into sessions values (" + str(id_incident) + ", 0, "
             features = ip_feature_db[ip]
             insert_sql += "\"" + ip + "\","
-            
+
             for feature in features:
                 insert_sql += str(features[feature]) + ","
-                
+
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
-            
+
             self.cur.execute(insert_sql)
         self.db.commit()
 
@@ -190,6 +190,13 @@ class BothoundTools():
         self.cur.execute("select id, start, stop from incidents WHERE "
         "cast(processed as unsigned) = %d" % (1 if processed else 0))
         return [dict(elem) for elem in self.cur.fetchall()]
+
+    def get_incident(self, id):
+        self.cur.execute("select id, start, stop from incidents WHERE id = %d" % id)
+        incident = None
+        for row in self.cur.fetchall():
+            incident = row
+        return incident
 
     def get_processed_incidents(self):
         return self.get_incidents(True)
@@ -215,7 +222,7 @@ class BothoundTools():
         self.cur.close()
         self.db.close()
 
-    def load_database_config(self, database_conf):        
+    def load_database_config(self, database_conf, elastic_db_conf):
         self.db_user = database_conf["user"]
         self.db_password = database_conf["password"]
         self.db_host = database_conf["host"]
@@ -224,6 +231,15 @@ class BothoundTools():
             self.db_port = database_conf["port"]
         else:
             self.db_port = 3306
+
+        #read elastic search user and password
+        self.es_user = elastic_db_conf["user"]
+        self.es_password = elastic_db_conf["password"]
+        self.es_host = elastic_db_conf["host"]
+        if("port" in elastic_db_conf):
+            self.es_port = elastic_db_conf["port"]
+        else:
+            self.es_port = 9200
 
     def random_slicer(self, data_size, train_portion=0.5):
         """
@@ -273,7 +289,7 @@ class BothoundTools():
             useful_part = useful_part[:-2]
             new_split = useful_part.split(', ')
 
-            insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, " 
+            insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, "
             insert_sql += "\"" + str(line_number) + "\","
             line_number = line_number + 1
             for b in new_split:
@@ -284,7 +300,7 @@ class BothoundTools():
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
             self.cur.execute(insert_sql)
-        
+
         self.db.commit()
         print "done."
         return id_incident
@@ -323,14 +339,14 @@ class BothoundTools():
         X = np.array(data_set)
 
         # Compute DBSCAN
-        db = DBSCAN(eps=0.1, min_samples=20).fit(X)        
+        db = DBSCAN(eps=0.1, min_samples=20).fit(X)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
 
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-        print('Estimated number of clusters: %d' % n_clusters_)        
+        print('Estimated number of clusters: %d' % n_clusters_)
 
         #update the cluster column in session table
         for session, label in zip(sessions, labels):
@@ -341,11 +357,8 @@ class BothoundTools():
         return sessions
 
 
-    def __init__(self, database_conf):
+    def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
         #config in the constructor
-        self.load_database_config(database_conf)
-        pass
-
-
+        self.load_database_config(conf["database"], conf["elastic_db"])

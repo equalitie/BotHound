@@ -23,3 +23,9 @@ sniffers:
     bindstring: tcp://127.0.0.1:22621
     passphrase: xxx
     logfile: logfetcher.log
+
+elastic_db:
+    user:
+    password:
+    host:
+    
