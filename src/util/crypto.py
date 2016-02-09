@@ -51,26 +51,30 @@ def decrypt(key, associated_data, iv, ciphertext, tag):
     # If the tag does not match an InvalidTag exception will be raised.
     return decryptor.update(ciphertext) + decryptor.finalize()
 
-iv, ciphertext, tag = encrypt(
-    other_digest,
-    b"a secret message!",
-    b"authenticated but not encrypted payload"
-)
+def main():
+    iv, ciphertext, tag = encrypt(
+        other_digest,
+        b"a secret message!",
+        b"authenticated but not encrypted payload"
+    )
+
+    encrypted_message = encrypt(
+        other_digest,
+        b"a secret message!",
+        b"authenticated but not encrypted payload"
+    )   
+
+    #print encrypted_message 
+
+    decrypted_msg = decrypt(
+        other_digest,
+        b"authenticated but not encrypted payload",
+        iv,
+        ciphertext,
+        tag
+    )
+
+if __name__ == "__main__":
+    main()
    
-encrypted_message = encrypt(
-    other_digest,
-    b"a secret message!",
-    b"authenticated but not encrypted payload"
-)   
-
-#print encrypted_message 
-
-decrypted_msg = decrypt(
-    other_digest,
-    b"authenticated but not encrypted payload",
-    iv,
-    ciphertext,
-    tag
-)
-
 #print decrypted_msg
