@@ -185,7 +185,6 @@ class BothoundTools():
 
             insert_sql = insert_sql[:-1]
             insert_sql += ");"
-            print insert_sql
 
             self.cur.execute(insert_sql)
         self.db.commit()
