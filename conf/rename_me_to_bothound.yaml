@@ -5,6 +5,9 @@ database:
   password: 
   host: 127.0.0.1
   port : 3306
+  encryption_passphrase: xxx
+  hash_passphrase: xxx
+
 
 sniffers:
   - queue: greymemory_info

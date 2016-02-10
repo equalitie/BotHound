@@ -56,6 +56,9 @@ class BothoundTools():
         "id_incident INT NOT NULL, "
         "cluster_index INT, "
         "IP VARCHAR(45), "
+        "IP_ENCRYPTED LONGTEXT, "
+        "IP_IV LONGTEXT, "
+        "IP_TAG LONGTEXT, "
         "request_interval FLOAT, " #Feature Index 1
         "ua_change_rate FLOAT, " #Feature Index 2
         "html2image_ratio FLOAT, " #Feature Index 3
@@ -179,23 +182,34 @@ class BothoundTools():
 
     def add_sessions(self, id_incident, ip_feature_db):
         for ip in ip_feature_db:
-            insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, "
+
+            insert_sql = "insert into sessions values (%s,%s,%s,%s,%s,%s,%s"
             features = ip_feature_db[ip]
-            ip_hash = "555"
-            insert_sql += "\"" + ip_hash + "\","
-
             for feature in features:
-                insert_sql += str(features[feature]) + ","
+                insert_sql += ",%s"
+            insert_sql += ")"
 
-            insert_sql = insert_sql[:-1]
-            insert_sql += ");"
+            features = ip_feature_db[ip]
+            ip_ascii = ip[0].encode('ascii','ignore')
+            ip_enctypted = self.encrypt(ip_ascii)
+            ip_hash = self.hash(ip_ascii)
 
-            self.cur.execute(insert_sql)
+            values = [0,id_incident,0, ip_hash, ip_enctypted[0], ip_enctypted[1], ip_enctypted[2]]
+            for feature in features:
+                values.append(features[feature])
+
+            self.cur.execute(insert_sql, values)
+
         self.db.commit()
 
     def get_sessions(self, id_incident):
         self.cur.execute("select * from sessions WHERE id_incident = {0}".format(id_incident))
         return [dict(elem) for elem in self.cur.fetchall()]
+
+    def set_incident_processed(self, id, processed):
+        sql = "update incidents set processed={} WHERE id = {}".format(processed,id)
+        self.cur.execute(sql)
+        self.db.commit()
 
     def get_incidents(self, processed):
         self.cur.execute("select id, start, stop from incidents WHERE "
@@ -306,6 +320,9 @@ class BothoundTools():
             insert_sql = "insert into sessions values (NULL," + str(id_incident) + ", 0, "
             insert_sql += "\"" + str(line_number) + "\","
             line_number = line_number + 1
+
+            insert_sql += "0,0,0,"
+
             for b in new_split:
                c = b.split(': ')[1]
                insert_sql += str(c) + ","
@@ -371,7 +388,13 @@ class BothoundTools():
         return sessions
 
 
-    def encrypt_and_hash_to_store(self, sensetive_data):
+    def encrypt(self, data):
+        return encrypt(self.db_encryption_key, data, "")
+
+    def hash(self, data):
+        return hmac.new(data, self.db_hash_key, hashlib.sha256).digest()
+
+    def encrypt_and_hash(self, data):
         """
         This is mainly for storing IPs so we don't store them 
         in plain, we use hash so each ip converts to the same
@@ -383,8 +406,7 @@ class BothoundTools():
         OUTPUT:: (encrypted_sensetive_data, 
                   keyed_hash_of_sensetive_data)
         """
-        return (encrypt(self.db_encryption_key, sensetive_data, ""),
-                hmac.new(sensetive_data, self.db_hash_key, hashlib.sha256).digest())
+        return (self.encrypt(data), self.hash(data))
         
     def __init__(self, conf):
         #we would like people to able to use the tool object even

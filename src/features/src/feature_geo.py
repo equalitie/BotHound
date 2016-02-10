@@ -35,9 +35,15 @@ class FeatureGEO(Learn2BanFeature):
         match['longitude'] = 0
         try:
             v = geolite2.lookup(ip)
-            match['country'] = v.country
-            match['latitude'] = v.location[0]
-            match['longitude'] = v.location[1]
+            if(v is not None):
+                match['country'] = v.country
+                match['latitude'] = v.location[0]
+                match['longitude'] = v.location[1]
+            else:
+                match['country'] = ""
+                match['latitude'] = 0
+                match['longitude'] = 0
+
         except ValueError:
             pass
         return match

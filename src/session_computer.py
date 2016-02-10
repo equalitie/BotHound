@@ -118,6 +118,7 @@ class SessionExtractor():
 
         #print ip_feature_db
         self.bothound_tools.add_sessions(incident['id'], ip_feature_db)
+        self.bothound_tools.set_incident_processed(incident['id'], False)
 
         return ip_feature_db
 

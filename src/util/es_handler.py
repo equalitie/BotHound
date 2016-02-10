@@ -26,9 +26,13 @@ class ESHandler:
         ts_start = 1000*calendar.timegm(start.timetuple())
         ts_stop = 1000*calendar.timegm(stop.timetuple())
 
-        cur_index = start.strftime('deflect.log-%Y.%m.%d')
+        #cur_index1 = start.strftime('deflect.log-%Y.%m.%d')
+        #cur_index2 = stop.strftime('deflect.log-%Y.%m.%d')
+        indexes = [start.strftime('deflect.log-%Y.%m.*')]
+        if(start.month != stop.month):
+            indexes.append(stop.strftime('deflect.log-%Y.%m.*'))
 
-        return self.es.search(index=cur_index, body =
+        return self.es.search(index=indexes, body =
             #add index between the quotation marks
             {
             "from" : 0, "size" : 10000,

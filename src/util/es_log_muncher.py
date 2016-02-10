@@ -10,10 +10,13 @@ def parse_es_json_object(hit_json_object):
     res = hit_json_object["_source"]
     ats_res = {}
     ats_res["host"] = res["client_ip"]
-    if res["client_ua"] == "-":
-        ats_res["agent"] = None
-    else:
-        ats_res["agent"] = res["client_ua"]
+
+    ats_res["agent"] = None
+    if "client_ua" in res:
+        if res["client_ua"] == "-":
+            ats_res["agent"] = None
+        else:
+            ats_res["agent"] = res["client_ua"]
 
     ats_res["status"] = int(res["http_response_code"])
 
