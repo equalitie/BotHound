@@ -4,11 +4,15 @@ Utility class that holds commonly used Bothound functions
 """
 import numpy as np
 
+from sklearn.cluster import DBSCAN
+import hashlib, hmac
 import MySQLdb
+
 from features.src.feature_geo import FeatureGEO
 from features.src.feature_deflectee import FeatureDeflectee
 
-from sklearn.cluster import DBSCAN
+from util.crypto import encrypt
+
 
 class BothoundTools():
     def connect_to_db(self):
@@ -239,6 +243,9 @@ class BothoundTools():
         else:
             self.db_port = 3306
 
+        self.db_encryption_key = hashlib.sha256(database_conf["encryption_passphrase"]).digest()
+        self.db_hash_key = hashlib.sha256(database_conf["hash_passphrase"]).digest()
+
         #read elastic search user and password
         self.es_user = elastic_db_conf["user"]
         self.es_password = elastic_db_conf["password"]
@@ -364,6 +371,21 @@ class BothoundTools():
         return sessions
 
 
+    def encrypt_and_hash_to_store(self, sensetive_data):
+        """
+        This is mainly for storing IPs so we don't store them 
+        in plain, we use hash so each ip converts to the same
+        hash so we can get all the sessions related to an ip
+        without knowing the ip
+
+        INPUT:: a string containing the sensetive data
+
+        OUTPUT:: (encrypted_sensetive_data, 
+                  keyed_hash_of_sensetive_data)
+        """
+        return (encrypt(self.db_encryption_key, sensetive_data, ""),
+                hmac.new(sensetive_data, self.db_hash_key, hashlib.sha256).digest())
+        
     def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
