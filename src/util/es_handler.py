@@ -25,6 +25,7 @@ class ESHandler:
         """
         Get deflect log from es
         """
+
         ts_start = 1000*calendar.timegm(start.timetuple())
         ts_stop = 1000*calendar.timegm(stop.timetuple())
 
@@ -60,18 +61,17 @@ class ESHandler:
         }
       }
     })
-        result = json.loads("{}")
+        result = []
         sid = page['_scroll_id']
         page_index = 0
         scroll_size = page['hits']['total'] 
         print "scroll_size", scroll_size
         # Start scrolling
-        pdb.set_trace()
         
         while (scroll_size > 0):
             print "Scrolling...", page_index
             page_index = page_index + 1
-            page = es.scroll(scroll_id = sid, scroll = '5m')
+            page = self.es.scroll(scroll_id = sid, scroll = '5m')
             # Update the scroll ID
             sid = page['_scroll_id']
             # Get the number of results that we returned in the last scroll
@@ -79,7 +79,7 @@ class ESHandler:
             print "scroll size: " + str(scroll_size)
             # Do something with the obtained page
             json_result = page['hits']['hits']
-            result.append(json_result)
+            result += json_result;
 
         return result
 
