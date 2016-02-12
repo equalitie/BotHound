@@ -28,7 +28,7 @@ def parse_es_json_object(hit_json_object):
         print "ignoring request with invalid method %s"%(ats_res["method"])
         return None
     elif ats_res["method"] not in NORMAL_HTTP_METHODS:
-        print "abnormal http request, somebody messing around?:", line
+        print "abnormal http request, somebody messing around?:"
 
     #the specific extension is only important in text/html otherwise
     #the general type gives us enough information
@@ -53,7 +53,7 @@ def parse_es_json_object(hit_json_object):
 
     #just to observe the illogically large sizes
     if (ats_res["size"] >= UNREASANABLE_SIZE):
-        print "unreasonably large payload ", line
+        print "unreasonably large payload "
         return None
 
     timestamp = res["@timestamp"]

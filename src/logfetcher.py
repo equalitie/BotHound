@@ -18,6 +18,7 @@ class LogFetcher(threading.Thread):
         self.GREYMEMORY_INFO = "greymemory_info"
         
         for sniffer in conf_options['sniffers']:
+            print sniffer
             context = zmq.Context()
             self.socket = context.socket(zmq.SUB)
             subscriber = zmqstream.ZMQStream(self.socket)
@@ -33,6 +34,9 @@ class LogFetcher(threading.Thread):
     def subscription(self, zmq_message):
         try:
             action, encrypted_message = zmq_message;
+            print action
+            print encrypted_message
+
             #decrypt the message here
             zmq_iv = encrypted_message[0:12]
             zmq_cipher = encrypted_message[12:-16] 
