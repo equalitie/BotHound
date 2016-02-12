@@ -160,7 +160,7 @@ class IPSieve():
 
     def parse_elastic_search_log(self):
         print "Parsing... "
-        hits = self._log_lines['hits']['hits']
+        hits = self._log_lines #['hits']['hits']
 
         #we are going to keep track of each ip and last session number corresponding
         #to that ip

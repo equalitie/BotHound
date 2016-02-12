@@ -4,6 +4,8 @@ from elasticsearch import Elasticsearch
 import certifi
 import datetime
 import calendar
+import json
+import pdb
 
 class ESHandler:
     def __init__(self, es_user, es_password, es_host, es_port):
@@ -32,7 +34,11 @@ class ESHandler:
         if(start.month != stop.month):
             indexes.append(stop.strftime('deflect.log-%Y.%m.*'))
 
-        return self.es.search(index=indexes, body =
+        page = self.es.search(index=indexes, 
+            scroll = '5m',
+            search_type = 'scan',
+            size = 10000,
+            body =
             #add index between the quotation marks
             {
             "from" : 0, "size" : 10000,
@@ -54,6 +60,30 @@ class ESHandler:
         }
       }
     })
+        result = json.loads("{}")
+        sid = page['_scroll_id']
+        page_index = 0
+        scroll_size = page['hits']['total'] 
+        print "scroll_size", scroll_size
+        # Start scrolling
+        pdb.set_trace()
+        
+        while (scroll_size > 0):
+            print "Scrolling...", page_index
+            page_index = page_index + 1
+            page = es.scroll(scroll_id = sid, scroll = '5m')
+            # Update the scroll ID
+            sid = page['_scroll_id']
+            # Get the number of results that we returned in the last scroll
+            scroll_size = len(page['hits']['hits'])
+            print "scroll size: " + str(scroll_size)
+            # Do something with the obtained page
+            json_result = page['hits']['hits']
+            result.append(json_result)
+
+        return result
+
+
 
 #print len(query_result(0,0,0))
 #print query_deflect_logs(0,0,0)
