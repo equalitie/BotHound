@@ -87,10 +87,11 @@ class SessionExtractor():
         #stop =  1451560001000
 
         # get the logs from ES
-        logs = self.es_handler.get_logs(incident['start'], incident['stop'])
+        ats_records = self.es_handler.get(incident['start'], incident['stop'], incident['target'])
 
         # calculate IP dictionary with ATS records
-        ip_records = self.get_ip_records(logs)
+        ip_sieve = IPSieve()
+        ip_records = ip_sieve.process_ats_records(ats_records)
 
         # calculate features
         ip_feature_db = {}
@@ -121,12 +122,6 @@ class SessionExtractor():
         self.bothound_tools.set_incident_processed(incident['id'], False)
 
         return ip_feature_db
-
-    def get_ip_records(self, logs):
-        ip_sieve = IPSieve()
-        ip_sieve.set_log_lines(logs)
-        ip_sieve.parse_elastic_search_log()
-        return ip_sieve.ordered_records()
 
     def extract(self):
         """

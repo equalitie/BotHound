@@ -7,7 +7,10 @@ NORMAL_HTTP_METHODS = ["GET", "HEAD", "POST"]
 VALID_HTTP_METHODS = ["OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT", "PROPFIND", "PROPPATCH", "MKCOL", "COPY", "MOVE", "LOCK", "UNLOCK", "VERSION-CONTROL", "REPORT", "CHECKOUT", "CHECKIN", "UNCHECKOUT", "MKWORKSPACE", "UPDATE", "LABEL", "MERGE", "BASELINE-CONTROL", "MKACTIVITY", "ORDERPATCH", "ACL"]
 
 def parse_es_json_object(hit_json_object):
+
     res = hit_json_object["_source"]
+    if "client_ip" not in res:
+        return None
     ats_res = {}
     ats_res["host"] = res["client_ip"]
 

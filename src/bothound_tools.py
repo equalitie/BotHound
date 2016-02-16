@@ -51,6 +51,11 @@ class BothoundTools():
         "PRIMARY KEY(id)) "
         "ENGINE=INNODB;")
 
+        try:
+            self.cur.execute("ALTER TABLE incidents ADD target LONGTEXT;")
+        except:
+            pass
+
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
         "id_incident INT NOT NULL, "
@@ -212,12 +217,12 @@ class BothoundTools():
         self.db.commit()
 
     def get_incidents(self, processed):
-        self.cur.execute("select id, start, stop from incidents WHERE "
+        self.cur.execute("select * from incidents WHERE "
         "cast(processed as unsigned) = %d" % (1 if processed else 0))
         return [dict(elem) for elem in self.cur.fetchall()]
 
     def get_incident(self, id):
-        self.cur.execute("select id, start, stop from incidents WHERE id = %d" % id)
+        self.cur.execute("select * from incidents WHERE id = %d" % id)
         incident = None
         for row in self.cur.fetchall():
             incident = row
