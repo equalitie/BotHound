@@ -12,6 +12,7 @@ AUTHORS:
 from util.apache_log_muncher import parse_line as parse_apache_line
 from util.ats_record import ATSRecord
 import util.es_log_muncher 
+import pdb
 
 class IPSieve():
     DEAD_SESSION_PAUSE  = 1800 #minimum number of seconds between two session
@@ -178,7 +179,10 @@ class IPSieve():
             #if we already decided that we are in a new session then there is nothing
             #to investigate
             if not new_session:
-                #so we have a session already recorded, compare
+                if cur_ats_rec.time_to_second() - ip_records[(cur_ip, ip_session_tracker[cur_ip])][-1].time_to_second() < 0:
+                    print cur_ats_rec.payload, ip_records[(cur_ip, ip_session_tracker[cur_ip])][-1].payload
+                    pdb.set_trace()
+                               #so we have a session already recorded, compare
                 #the time of that last record of that session with
                 #this session
                 if cur_ats_rec.time_to_second() - ip_records[(cur_ip, ip_session_tracker[cur_ip])][-1].time_to_second() > self.DEAD_SESSION_PAUSE:

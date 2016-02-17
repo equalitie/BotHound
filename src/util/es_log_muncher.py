@@ -21,7 +21,13 @@ def parse_es_json_object(hit_json_object):
         else:
             ats_res["agent"] = res["client_ua"]
 
-    ats_res["status"] = int(res["http_response_code"])
+    try:
+        ats_res["status"] = int(res["http_response_code"])
+    except ValueError, e:
+        ats_res["status"] = 0
+        print "invalid http_response_code %s"%(res["http_response_code"])
+        print res
+
 
     ats_res["http_ver"] = res["http_request_version"]
     ats_res["method"] = res["client_request_method"]
@@ -61,6 +67,7 @@ def parse_es_json_object(hit_json_object):
 
     timestamp = res["@timestamp"]
     ats_res["time"] = timestamp[:timestamp.find('.000Z')] + "Z"
+    ats_res["time_raw"] = timestamp
 
     if('geoip' in res):
         geoip = res['geoip']

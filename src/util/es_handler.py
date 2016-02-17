@@ -40,16 +40,11 @@ class ESHandler:
         #indexes = [start.strftime('deflect.log-%Y.%m.*')]
         #if(start.month != stop.month):
             #indexes.append(stop.strftime('deflect.log-%Y.%m.*'))
-
-        page = self.es.search(index=indexes, 
-            scroll = '5m',
-            search_type = 'scan',
-            size = 10000,
-            body =
-            #add index between the quotation marks
-            {
+        print "es.search() start..."
+        es_body = {
             "from" : 0, "size" : 10000,
-            #the size can be changed but apparently the current query does not show > 10000 results.
+            "sort" :[{"@timestamp":{"order":"dec"}}],
+            #the size can be changed but apparentlay the current query does not show > 10000 results.
             "query": {
             "bool": {
             "must": { "match_all": {} },
@@ -66,7 +61,15 @@ class ESHandler:
           }
         }
       }
-    })
+    }
+        print es_body
+        page = self.es.search(index=indexes, 
+            scroll = '5m',
+            search_type = 'scan',
+            size = 10000,
+            body = es_body
+            #add index between the quotation marks
+            )
         result = []
         sid = page['_scroll_id']
         page_index = 0
@@ -90,11 +93,13 @@ class ESHandler:
             
             # Do something with the obtained page
             json_result = page['hits']['hits']
+            pdb.set_trace()
 
             for log in json_result:
                 cur_rec_dict = util.es_log_muncher.parse_es_json_object(log)
                 if cur_rec_dict:
                     cur_ats_rec = ATSRecord(cur_rec_dict);
+                    #print cur_ats_rec.payload['time']
                     if (target is None) :
                         result.append(cur_ats_rec);
                         num_processed = num_processed +  1
@@ -104,7 +109,7 @@ class ESHandler:
                             num_processed = num_processed +  1
                         
             print "num_processed: " + str(num_processed)
-            if(num_processed > 5000000):
+            if(num_processed > 9000):
                 break
 
         return result
