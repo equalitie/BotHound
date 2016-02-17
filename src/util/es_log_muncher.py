@@ -3,8 +3,8 @@ Simply getting the relevant fields from es data and put them into
 ats record
 """
 UNREASANABLE_SIZE = 100*1024*1024 #100MB
-NORMAL_HTTP_METHODS = ["GET", "HEAD", "POST"]
-VALID_HTTP_METHODS = ["OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT", "PROPFIND", "PROPPATCH", "MKCOL", "COPY", "MOVE", "LOCK", "UNLOCK", "VERSION-CONTROL", "REPORT", "CHECKOUT", "CHECKIN", "UNCHECKOUT", "MKWORKSPACE", "UPDATE", "LABEL", "MERGE", "BASELINE-CONTROL", "MKACTIVITY", "ORDERPATCH", "ACL"]
+NORMAL_HTTP_METHODS = ["-","GET", "HEAD", "POST"]
+VALID_HTTP_METHODS = ["-","OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT", "PROPFIND", "PROPPATCH", "MKCOL", "COPY", "MOVE", "LOCK", "UNLOCK", "VERSION-CONTROL", "REPORT", "CHECKOUT", "CHECKIN", "UNCHECKOUT", "MKWORKSPACE", "UPDATE", "LABEL", "MERGE", "BASELINE-CONTROL", "MKACTIVITY", "ORDERPATCH", "ACL"]
 
 def parse_es_json_object(hit_json_object):
 
@@ -31,7 +31,7 @@ def parse_es_json_object(hit_json_object):
         print "ignoring request with invalid method %s"%(ats_res["method"])
         return None
     elif ats_res["method"] not in NORMAL_HTTP_METHODS:
-        print "abnormal http request, somebody messing around?:"
+        print "abnormal http request, somebody messing around?:", ats_res["method"]
 
     #the specific extension is only important in text/html otherwise
     #the general type gives us enough information

@@ -8,6 +8,7 @@ import json
 import pdb
 from util.ats_record import ATSRecord
 import util.es_log_muncher 
+import datetime
 
 class ESHandler:
     def __init__(self, es_user, es_password, es_host, es_port):
@@ -31,11 +32,14 @@ class ESHandler:
         ts_start = 1000*calendar.timegm(start.timetuple())
         ts_stop = 1000*calendar.timegm(stop.timetuple())
 
-        #cur_index1 = start.strftime('deflect.log-%Y.%m.%d')
-        #cur_index2 = stop.strftime('deflect.log-%Y.%m.%d')
-        indexes = [start.strftime('deflect.log-%Y.%m.*')]
-        if(start.month != stop.month):
-            indexes.append(stop.strftime('deflect.log-%Y.%m.*'))
+        indexes = [start.strftime('deflect.log-%Y.%m.%d')]
+        if(start.day != stop.day):
+            indexes.append(stop.strftime('deflect.log-%Y.%m.%d'))
+        
+        
+        #indexes = [start.strftime('deflect.log-%Y.%m.*')]
+        #if(start.month != stop.month):
+            #indexes.append(stop.strftime('deflect.log-%Y.%m.*'))
 
         page = self.es.search(index=indexes, 
             scroll = '5m',
@@ -74,7 +78,10 @@ class ESHandler:
         while (scroll_size > 0):
             print "Scrolling...", page_index
             page_index = page_index + 1
+            tStart = datetime.datetime.now()
             page = self.es.scroll(scroll_id = sid, scroll = '5m')
+            print "scroll time ,sec:", (datetime.datetime.now() - tStart).total_seconds()
+
             # Update the scroll ID
             sid = page['_scroll_id']
             # Get the number of results that we returned in the last scroll
@@ -97,7 +104,7 @@ class ESHandler:
                             num_processed = num_processed +  1
                         
             print "num_processed: " + str(num_processed)
-            if(num_processed > 10000000):
+            if(num_processed > 5000000):
                 break
 
         return result
