@@ -29,7 +29,7 @@ class BothoundTools():
         self.cur.execute(sql)
         self.db.close()
 
-	    #Connect directly to DB
+        #Connect directly to DB
         self.db = MySQLdb.connect(host = self.db_host, user = self.db_user, 
             passwd = self.db_password, port = self.db_port, db = self.db_name)
         self.cur = self.db.cursor(MySQLdb.cursors.DictCursor)
@@ -53,6 +53,11 @@ class BothoundTools():
 
         try:
             self.cur.execute("ALTER TABLE incidents ADD target LONGTEXT;")
+        except:
+            pass
+
+        try:
+            self.cur.execute("ALTER TABLE incidents ADD cluster_index INT;")
         except:
             pass
 
