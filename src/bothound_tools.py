@@ -12,7 +12,7 @@ from features.src.feature_geo import FeatureGEO
 from features.src.feature_deflectee import FeatureDeflectee
 
 from util.crypto import encrypt
-
+import pdb
 
 class BothoundTools():
     def connect_to_db(self):
@@ -105,6 +105,17 @@ class BothoundTools():
         "code LONGTEXT, "
         "name LONGTEXT, "
         "PRIMARY KEY(id)) ENGINE=INNODB;")
+
+        # Intersections table
+        self.cur.execute("create table IF NOT EXISTS intersections (id INT NOT NULL AUTO_INCREMENT, "
+        "id_incident INT," 
+        "id_incident2 INT," 
+        "total INT, "
+        "intersection FLOAT, " # (length of id_incident)*100/total
+        "intersection2 FLOAT, " # (length of id_incident2)*100/total
+        "PRIMARY KEY(id), INDEX index_incicent (id_incident),"
+        "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE"
+        ") ENGINE=INNODB;")
 
     def get_deflectees(self):
         self.cur.execute("select * from deflectees")
@@ -319,7 +330,7 @@ class BothoundTools():
 
         filename = '../data/feature_db-files.txt'
         file = open(filename)
-        line_number = 1
+        line_number = 15000
         for line in file:
             splitted_line = line.split(') {')
 
@@ -418,6 +429,34 @@ class BothoundTools():
         """
         return (self.encrypt(data), self.hash(data))
         
+    def calculate_intersection(self, id_incident, id_incident2):
+        # delete the previous calculations
+        self.cur.execute("DELETE FROM intersections WHERE id_incident = {0}".format(id_incident))
+        self.db.commit()
+
+        self.cur.execute("select IP from sessions WHERE id_incident = {0}".format(id_incident))
+        ips = [elem["IP"] for elem in self.cur.fetchall()]
+
+        self.cur.execute("select IP from sessions WHERE id_incident = {0}".format(id_incident2))
+        ips2 = [elem["IP"] for elem in self.cur.fetchall()]
+
+        total = len(set(ips).intersection(ips2))
+
+        #update the table
+        sql = """INSERT INTO intersections (`id`, `id_incident`, `id_incident2`, `total`, 
+        `intersection`, `intersection2`) VALUES ({},{},{},{},{},{})""".format(0,
+        id_incident, id_incident2, total, total*100.0/len(ips), total*100.0/len(ips2))
+
+        self.cur.execute(sql)
+        self.db.commit()
+        return 
+
+    def calculate_all_intersections(self, id_incident):
+        self.cur.execute("select * from incidents where id != {}".format(id_incident))
+        for incident in self.cur.fetchall():
+            self.calculate_intersection(id_incident, incident["id"])
+        pass
+
     def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
