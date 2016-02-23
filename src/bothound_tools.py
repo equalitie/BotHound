@@ -56,6 +56,11 @@ class BothoundTools():
         except:
             pass
 
+        try:
+            self.cur.execute("ALTER TABLE incidents ADD cluster_index INT;")
+        except:
+            pass
+
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
         "id_incident INT NOT NULL, "

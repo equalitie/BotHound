@@ -43,11 +43,11 @@ class ESHandler:
         print "es.search() start..."
         es_body = {
             "from" : 0, "size" : 10000,
-            "sort" :[{"@timestamp":{"order":"dec"}}],
+            "sort" :[{"@timestamp":{"order":"asc"}}],
             #the size can be changed but apparentlay the current query does not show > 10000 results.
             "query": {
             "bool": {
-            "must": { "match_all": {} },
+            #"must": { "match_all": {} },
             "filter": {
                 "range": {
                 "@timestamp": {
@@ -62,10 +62,17 @@ class ESHandler:
         }
       }
     }
+        """
+        f1=open('./q.txt', 'w+')
         print es_body
+        print >>f1, es_body
+        print >>f1, indexes
+        print >>f1, ts_start
+        print >>f1, ts_stop
+        """   
         page = self.es.search(index=indexes, 
             scroll = '5m',
-            search_type = 'scan',
+            #search_type = 'scan',
             size = 10000,
             body = es_body
             #add index between the quotation marks
@@ -93,9 +100,10 @@ class ESHandler:
             
             # Do something with the obtained page
             json_result = page['hits']['hits']
-            pdb.set_trace()
+            #pdb.set_trace()
 
             for log in json_result:
+                #print log['_source']['@timestamp']
                 cur_rec_dict = util.es_log_muncher.parse_es_json_object(log)
                 if cur_rec_dict:
                     cur_ats_rec = ATSRecord(cur_rec_dict);
@@ -109,7 +117,7 @@ class ESHandler:
                             num_processed = num_processed +  1
                         
             print "num_processed: " + str(num_processed)
-            if(num_processed > 9000):
+            if(num_processed > 5000000):
                 break
 
         return result
