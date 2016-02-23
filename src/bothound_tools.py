@@ -5,6 +5,7 @@ Utility class that holds commonly used Bothound functions
 import numpy as np
 
 from sklearn.cluster import DBSCAN
+from sklearn.cluster import KMeans
 import hashlib, hmac
 import MySQLdb
 
@@ -239,10 +240,7 @@ class BothoundTools():
 
     def get_incident(self, id):
         self.cur.execute("select * from incidents WHERE id = %d" % id)
-        incident = None
-        for row in self.cur.fetchall():
-            incident = row
-        return incident
+        return self.cur.fetchall()
 
     def get_processed_incidents(self):
         return self.get_incidents(True)
@@ -456,6 +454,53 @@ class BothoundTools():
         for incident in self.cur.fetchall():
             self.calculate_intersection(id_incident, incident["id"])
         pass
+
+    def get_best_clustering_model(self, X, max_number_of_clusters):
+        cost = []
+        KK = range(1,max_number_of_clusters+1)
+        kms = []
+        # calculate all the clustering and cost
+        for no_of_clusters in KK:
+            km = KMeans(n_clusters=no_of_clusters, precompute_distances = True, max_iter = 500, n_init = 30)
+            km.fit(X)
+            kms.append(km)
+            
+            sizes = [0]*no_of_clusters
+            for i in km.predict(X): 
+                sizes[i] = sizes[i]+1
+            print sizes
+
+            #centroids = km.cluster_centers_ 
+            #distances = cdist(X, centroids, 'euclidean')
+            #cIdx = np.argmin(distances,axis=1) 
+            #dist = np.min(distances,axis=1) 
+            #tot_withinss = sum(dist**2)  # Total within-cluster sum of squares
+
+            #cost.append(tot_withinss / X.shape[0]) 
+            cost.append(km.inertia_)
+        
+        # calculate first derivative
+        derivative1 = [cost[i+1]-cost[i] for i in range(len(cost)-1)]
+        #print derivative1
+            
+        # calculate second derivative
+        derivative2 = [derivative1[i+1]-derivative1[i] for i in range(len(derivative1)-1)]
+        #print derivative2
+        
+        max2 = argrelextrema(np.argsort(derivative2), np.less) 
+        num_clusters = 4 
+        if(len(max2[0]) > 0):
+            num_clusters = max2[0][0] + 3
+        else:
+            # calculate third derivative
+            derivative3 = [derivative2[i+1]-derivative2[i] for i in range(len(derivative2)-1)]
+            #print derivative3
+
+            max3 = argrelextrema(np.argsort(derivative3), np.greater) 
+            if(len(max3[0]) > 0):
+                num_clusters = max3[0][0] + 4 
+            
+        return kms[num_clusters-1], cost
 
     def __init__(self, conf):
         #we would like people to able to use the tool object even
