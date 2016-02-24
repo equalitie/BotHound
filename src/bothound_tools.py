@@ -228,6 +228,15 @@ class BothoundTools():
         self.cur.execute("select * from sessions WHERE id_incident = {0}".format(id_incident))
         return [dict(elem) for elem in self.cur.fetchall()]
 
+    def get_ips(self, id_incident, cluster_index = -1):
+        if cluster_index >= 0 :
+            self.cur.execute("select IP from sessions WHERE id_incident = {} "
+                "and cluster_index = {}".format(id_incident, cluster_index))
+        else:
+            self.cur.execute("select IP from sessions WHERE id_incident = {0}".format(id_incident))
+
+        return [elem["IP"] for elem in self.cur.fetchall()]
+
     def set_incident_processed(self, id, processed):
         sql = "update incidents set processed={} WHERE id = {}".format(processed,id)
         self.cur.execute(sql)
@@ -432,11 +441,8 @@ class BothoundTools():
         self.cur.execute("DELETE FROM intersections WHERE id_incident = {0}".format(id_incident))
         self.db.commit()
 
-        self.cur.execute("select IP from sessions WHERE id_incident = {0}".format(id_incident))
-        ips = [elem["IP"] for elem in self.cur.fetchall()]
-
-        self.cur.execute("select IP from sessions WHERE id_incident = {0}".format(id_incident2))
-        ips2 = [elem["IP"] for elem in self.cur.fetchall()]
+        ips = get_ips(id_incident)
+        ips2 = get_ips(id_incident2)
 
         total = len(set(ips).intersection(ips2))
 
@@ -453,54 +459,15 @@ class BothoundTools():
         self.cur.execute("select * from incidents where id != {}".format(id_incident))
         for incident in self.cur.fetchall():
             self.calculate_intersection(id_incident, incident["id"])
-        pass
 
-    def get_best_clustering_model(self, X, max_number_of_clusters):
-        cost = []
-        KK = range(1,max_number_of_clusters+1)
-        kms = []
-        # calculate all the clustering and cost
-        for no_of_clusters in KK:
-            km = KMeans(n_clusters=no_of_clusters, precompute_distances = True, max_iter = 500, n_init = 30)
-            km.fit(X)
-            kms.append(km)
-            
-            sizes = [0]*no_of_clusters
-            for i in km.predict(X): 
-                sizes[i] = sizes[i]+1
-            print sizes
+    def save_clustering(self, sessions, clusters):
+        for session, label in zip(sessions, clusters):
+            self.cur.execute("update sessions set cluster_index={} WHERE id = {}".format(cluster,session["id"]))
+        db.commit()
 
-            #centroids = km.cluster_centers_ 
-            #distances = cdist(X, centroids, 'euclidean')
-            #cIdx = np.argmin(distances,axis=1) 
-            #dist = np.min(distances,axis=1) 
-            #tot_withinss = sum(dist**2)  # Total within-cluster sum of squares
-
-            #cost.append(tot_withinss / X.shape[0]) 
-            cost.append(km.inertia_)
-        
-        # calculate first derivative
-        derivative1 = [cost[i+1]-cost[i] for i in range(len(cost)-1)]
-        #print derivative1
-            
-        # calculate second derivative
-        derivative2 = [derivative1[i+1]-derivative1[i] for i in range(len(derivative1)-1)]
-        #print derivative2
-        
-        max2 = argrelextrema(np.argsort(derivative2), np.less) 
-        num_clusters = 4 
-        if(len(max2[0]) > 0):
-            num_clusters = max2[0][0] + 3
-        else:
-            # calculate third derivative
-            derivative3 = [derivative2[i+1]-derivative2[i] for i in range(len(derivative2)-1)]
-            #print derivative3
-
-            max3 = argrelextrema(np.argsort(derivative3), np.greater) 
-            if(len(max3[0]) > 0):
-                num_clusters = max3[0][0] + 4 
-            
-        return kms[num_clusters-1], cost
+    def save_selected_cluster(self, id_incident, selected_cluster):
+        cur.execute("update incidents set selected_cluster={} WHERE id = {}".format(selected_cluster,id_incident))
+        db.commit()
 
     def __init__(self, conf):
         #we would like people to able to use the tool object even
