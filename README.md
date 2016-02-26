@@ -45,25 +45,25 @@ You need to create a configuration file bothound.yaml
 2. Rename the copy to bothound.yaml  
 3. Update the file with your credentials  
  
-## Basic Usage
+# Basic Usage
 
-### Creating incidents
+## Creating incidents
 Incidents might be created 
 
 * Manually using Adminer  
 * Automatically using bothound. Bothound creates incindets based on messages from GreyMemory anomaly detector.
 
-### Running Bothound
+## Running Bothound
 
 * To run bothound:  
 cd src
 python bothound.py
 
-### Getting data from Elastic Search and calculating features
+## Getting data from Elastic Search and calculating features
 1. Set "processed" column to 1 for the incidents you are willing to update.
 2. Run python session_computer.py
 
-### Clustering 
+## Clustering 
 To run Jupyter
 
 1. Run Jupyter on server from the folder with the ipynb:    
@@ -85,8 +85,8 @@ Using thes Ipython notebook you can:
 * display 3D scatter plot using selected clusters from different incidents  
 * store the clustering as well as the selected cluster in the database  
 
-### Classification of incidents
+## Classification of incidents
 Not implemented yet.
 
-### Botnet profiling
+## Botnet profiling
 Not implemented yet.
