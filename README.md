@@ -15,37 +15,40 @@ The following libraries should be installed:
 * [sudo] pip install -U scikit-learn 
 * [sudo] apt-get install git
   
-## Install Anaconda
-* Download Anaconda installer from [https://www.continuum.io/downloads](https://www.continuum.io/downloads):
-* [sudo] bash Anaconda2-2.5.0-Linux-x86_64.sh
-Install to /opt/anaconda
-* Make sure /opt/anaconda/bin is in the $PATH
-
 ## Install Jupyter
-* [sudo] conda install jupyter
-* pip install https://github.com/ipython-contrib/IPython-notebook-extensions/archive/master.zip
+* first make sure that you install jupyter locally because nbextension has a bug and only is able to install if there is a local installation.  
+sudo pip install jupyter --user
+
+* install jupyter system wide  
+sudo pip install jupyter
+
+* install jupyter nbextensions  
+pip install https://github.com/ipython-contrib/IPython-notebook-extensions/archive/master.zip
+
+* by mistake it copies the file in the local folder. Copy the files to the system wide folder.  
+sudo cp /root/.local/share/jupyter /usr/local/share  
+sudo chmod -R a+r /usr/local/share/jupyter 
 
 ## Get Source Code 
-* git clone https://github.com/equalitie/bothound
+* git clone https://github.com/equalitie/bothound  
 * cd bothound/
 
 ## Install Packages
-Install required packages from requirements.txt:
-* [sudo] /opt/anaconda/bin/pip install -r requirements.txt  
+Install required packages from requirements.txt:  
 
-
-
-
+* pip install -r requirements.txt  
 
 ## Configuration 
 You need to create a configuration file bothound.yaml
-1. Make a copy of conf/rename_me_to_bothound.yaml
-2. Rename the copy to bothound.yaml
-3. Update the file with your credentials
+
+1. Make a copy of conf/rename_me_to_bothound.yaml  
+2. Rename the copy to bothound.yaml  
+3. Update the file with your credentials  
  
+## Running
 
 Inititalize the file:
- $ python vengeance_live_sniffer.py --bindstrings tcp://10.0.1.48:22621
+$ python vengeance_live_sniffer.py --bindstrings tcp://10.0.1.48:22621
 
 Testing records: 
 in a browser, type:
