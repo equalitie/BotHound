@@ -8,18 +8,22 @@ Automatic attack detector and botnet classifier
 
 ## Libraries
 The following libraries should be installed:
-* $sudo apt-get install emacs python java javajdk libmysqlclient-dev build-essential python-dev python-numpy python-setuptools python-scipy libatlas-dev python-matplotlib python-mysqldb python-geoip libffi-dev python-dnspython libssl-dev python-zmq
+
+* [sudo] apt-get install emacs python java javajdk libmysqlclient-dev build-essential python-dev python-numpy python-setuptools python-scipy libatlas-dev python-matplotlib python-mysqldb python-geoip libffi-dev python-dnspython libssl-dev python-zmq
 * python 2.7
 * [sudo] apt-get install easy_install pip
 * [sudo] pip install -U scikit-learn 
 * [sudo] apt-get install git
   
 ## Install Anaconda
-* Download Anaconda installer from https://www.continuum.io/downloads:
+* Download Anaconda installer from [https://www.continuum.io/downloads](https://www.continuum.io/downloads):
 * [sudo] bash Anaconda2-2.5.0-Linux-x86_64.sh
+Install to /opt/anaconda
+* Make sure /opt/anaconda/bin is in the $PATH
 
 ## Install Jupyter
 * [sudo] conda install jupyter
+* pip install https://github.com/ipython-contrib/IPython-notebook-extensions/archive/master.zip
 
 ## Get Source Code 
 * git clone https://github.com/equalitie/bothound
@@ -27,7 +31,7 @@ The following libraries should be installed:
 
 ## Install Packages
 Install required packages from requirements.txt:
-* [sudo] pip install -r requirements.txt  
+* [sudo] /opt/anaconda/bin/pip install -r requirements.txt  
 
 
 
