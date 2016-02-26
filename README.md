@@ -8,28 +8,30 @@ Automatic attack detector and botnet classifier
 
 ## Libraries
 The following libraries should be installed:
-
-* $sudo apt-get install emacs python java javajdk libmysqlclient-dev build-essential python-dev python-numpy python-setuptools python-scipy libatlas-dev python-matplotlib python-mysqldb python-geoip libffi-dev python-dnspython
+* $sudo apt-get install emacs python java javajdk libmysqlclient-dev build-essential python-dev python-numpy python-setuptools python-scipy libatlas-dev python-matplotlib python-mysqldb python-geoip libffi-dev python-dnspython libssl-dev python-zmq
 * python 2.7
 * [sudo] apt-get install easy_install pip
-
-* [sudo] apt-get install build-essential libssl-dev libffi-dev python-dev
-* [sudo] apt-get install python-zmq
-
 * [sudo] pip install -U scikit-learn 
-
-* [sudo] sudo apt-get install build-essential python-dev python-setuptools python-numpy python-scipy
 * [sudo] apt-get install git
   
-## Source code 
+## Install Anaconda
+* Download Anaconda installer from https://www.continuum.io/downloads:
+* [sudo] bash Anaconda2-2.5.0-Linux-x86_64.sh
 
+## Install Jupyter
+* [sudo] conda install jupyter
+
+## Get Source Code 
 * git clone https://github.com/equalitie/bothound
 * cd bothound/
 
-## Packages
-Install required packages:
-
+## Install Packages
+Install required packages from requirements.txt:
 * [sudo] pip install -r requirements.txt  
+
+
+
+
 
 ## Configuration 
 You need to create a configuration file bothound.yaml
