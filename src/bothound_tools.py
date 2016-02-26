@@ -466,8 +466,8 @@ class BothoundTools():
         db.commit()
 
     def save_selected_cluster(self, id_incident, selected_cluster):
-        cur.execute("update incidents set selected_cluster={} WHERE id = {}".format(selected_cluster,id_incident))
-        db.commit()
+        self.cur.execute("update incidents set cluster_index={} WHERE id = {}".format(selected_cluster,id_incident))
+        self.db.commit()
 
     def __init__(self, conf):
         #we would like people to able to use the tool object even
