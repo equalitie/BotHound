@@ -5,3 +5,6 @@ python-geoip-geolite2
 elasticsearch
 certifi
 ua_parser
+bokeh
+pandas
+pycountry

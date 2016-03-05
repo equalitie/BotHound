@@ -87,6 +87,9 @@ class SessionExtractor():
         #stop =  1451560001000
 
         # get the logs from ES
+        banned_ips = self.es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+
+        # get the logs from ES
         ats_records = self.es_handler.get(incident['start'], incident['stop'], incident['target'])
 
         # calculate IP dictionary with ATS records
@@ -118,8 +121,8 @@ class SessionExtractor():
         self.bothound_tools.delete_sessions(incident['id'])
 
         #print ip_feature_db
-        self.bothound_tools.add_sessions(incident['id'], ip_feature_db)
-        self.bothound_tools.set_incident_processed(incident['id'], False)
+        self.bothound_tools.add_sessions(incident['id'], ip_feature_db, banned_ips)
+        self.bothound_tools.set_incident_process(incident['id'], False)
 
         return ip_feature_db
 
@@ -129,7 +132,7 @@ class SessionExtractor():
         finally store the sessions in the db
         """
         #this make more sense to happens in the constructor however,
-        for incident in bothound_tools.get_incidents(processed = True):
+        for incident in bothound_tools.get_incidents(process = True):
             cur_session_feature_db = self.process_incident(incident)
         
 

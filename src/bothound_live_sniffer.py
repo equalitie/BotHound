@@ -30,7 +30,7 @@ from features.src.feature_session_length import FeatureSessionLength
 from features.src.feature_user_agent import FeatureUserAgent
 from features.src.feature_variance_request_interval import FeatureVarianceRequestInterval
 from features.src.feature_geo import FeatureGEO
-from ats_record import ATSRecord
+from util.ats_record import ATSRecord
 from logfetcher import LogFetcher
 
 from collections import OrderedDict

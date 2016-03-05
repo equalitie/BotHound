@@ -69,10 +69,10 @@ def main():
     #  Update geo 
     #tools.update_geo(tools.get_test_incident())
 
-    #sessions = tools.get_sessions(tools.get_test_incident())
-    #print "test session length:", len(sessions)
+    sessions = tools.get_sessions(tools.get_test_incident())
+    print "test session length:", len(sessions)
 
-    tools.calculate_all_intersections(19)
+    #tools.calculate_all_intersections(19)
 
     #print "Deflectees:"
     #print tools.get_deflectees()

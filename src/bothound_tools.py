@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import KMeans
 import hashlib, hmac
-import MySQLdb
+import MySQLdb, pycountry
 
 from features.src.feature_geo import FeatureGEO
 from features.src.feature_deflectee import FeatureDeflectee
@@ -48,19 +48,11 @@ class BothoundTools():
         "banjax_start DATETIME, "
         "banjax_stop DATETIME, "
         "comment LONGTEXT, "
-        "processed BOOL,"
+        "process BOOL,"
+        "target LONGTEXT,"
+        "cluster_index INT,"
         "PRIMARY KEY(id)) "
         "ENGINE=INNODB;")
-
-        try:
-            self.cur.execute("ALTER TABLE incidents ADD target LONGTEXT;")
-        except:
-            pass
-
-        try:
-            self.cur.execute("ALTER TABLE incidents ADD cluster_index INT;")
-        except:
-            pass
 
         # SESSIONS table
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
@@ -70,6 +62,7 @@ class BothoundTools():
         "IP_ENCRYPTED LONGTEXT, "
         "IP_IV LONGTEXT, "
         "IP_TAG LONGTEXT, "
+        "ban BOOL,"
         "request_interval FLOAT, " #Feature Index 1
         "ua_change_rate FLOAT, " #Feature Index 2
         "html2image_ratio FLOAT, " #Feature Index 3
@@ -84,6 +77,7 @@ class BothoundTools():
         "longitude FLOAT," #Feature Index 12
         "id_country INT," #Feature Index 13
         "id_deflectee INT," #Feature Index 14
+
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
 
@@ -125,6 +119,23 @@ class BothoundTools():
     def get_countries(self):
         self.cur.execute("select * from countries")
         return [dict(elem) for elem in self.cur.fetchall()]
+
+    def update_country_names(self):
+        countries = self.get_countries()
+        for country in countries:
+            #pdb.set_trace()
+            if(country['name'] is not None) :
+                continue
+            try:
+                c = pycountry.countries.get(alpha2=country['code'])
+            except KeyError:
+                continue
+            
+            if (c is None) :
+                continue
+            self.cur.execute("update countries set name = %s where code = %s",
+                [c.name, country['code']]) 
+        self.db.commit()
 
     """
     Post process features calculated by "lear2bat_feature" class instances
@@ -191,7 +202,15 @@ class BothoundTools():
             if(country_code in ids):
                 features[feature_index] = ids[country_code]
             else:
-                self.cur.execute("insert into countries(code) values ('{}')".format(country_code))
+                try:
+                    c = pycountry.countries.get(alpha2=country_code)
+                except KeyError:
+                    continue
+                
+                country_name = ""
+                if (c is not None):
+                    country_name = c.name
+                self.cur.execute("insert into countries(code, name) values ('{}', '{}')".format(country_code, country_name))
                 ids[country_code] = self.cur.lastrowid
                 features[feature_index] = self.cur.lastrowid
                 self.db.commit()
@@ -202,10 +221,10 @@ class BothoundTools():
         self.cur.execute("DELETE FROM sessions WHERE id_incident = {0}".format(id_incident))
         self.db.commit()
 
-    def add_sessions(self, id_incident, ip_feature_db):
+    def add_sessions(self, id_incident, ip_feature_db, banned_ips):
         for ip in ip_feature_db:
 
-            insert_sql = "insert into sessions values (%s,%s,%s,%s,%s,%s,%s"
+            insert_sql = "insert into sessions values (%s,%s,%s,%s,%s,%s,%s,%s"
             features = ip_feature_db[ip]
             for feature in features:
                 insert_sql += ",%s"
@@ -216,7 +235,10 @@ class BothoundTools():
             ip_enctypted = self.encrypt(ip_ascii)
             ip_hash = self.hash(ip_ascii)
 
-            values = [0,id_incident,0, ip_hash, ip_enctypted[0], ip_enctypted[1], ip_enctypted[2]]
+            ban = 0
+            if(banned_ips is not None and ip[0] in banned_ips):
+                ban = 1
+            values = [0,id_incident,0, ip_hash, ip_enctypted[0], ip_enctypted[1], ip_enctypted[2], ban]
             for feature in features:
                 values.append(features[feature])
 
@@ -237,25 +259,26 @@ class BothoundTools():
 
         return [elem["IP"] for elem in self.cur.fetchall()]
 
-    def set_incident_processed(self, id, processed):
-        sql = "update incidents set processed={} WHERE id = {}".format(processed,id)
+    def get_selected_cluster(self, id_incident):
+        self.cur.execute("select * from incidents WHERE id = {0}".format(id_incident))
+        f = self.cur.fetchall()
+        if (len(f) == 0) :
+            return -1
+        return f["cluster_index"]
+
+    def set_incident_process(self, id, process):
+        sql = "update incidents set process={} WHERE id = {}".format(process,id)
         self.cur.execute(sql)
         self.db.commit()
 
-    def get_incidents(self, processed):
+    def get_incidents(self, process):
         self.cur.execute("select * from incidents WHERE "
-        "cast(processed as unsigned) = %d" % (1 if processed else 0))
+        "cast(process as unsigned) = %d" % (1 if process else 0))
         return [dict(elem) for elem in self.cur.fetchall()]
 
     def get_incident(self, id):
         self.cur.execute("select * from incidents WHERE id = %d" % id)
         return self.cur.fetchall()
-
-    def get_processed_incidents(self):
-        return self.get_incidents(True)
-
-    def get_not_processed_incidents(self):
-        return self.get_incidents(False)
 
     def update_geo(self, id_incident):
         self.cur.execute("select id, ip from sessions WHERE id_incident = {0}".format(id_incident))
@@ -436,13 +459,18 @@ class BothoundTools():
         """
         return (self.encrypt(data), self.hash(data))
         
-    def calculate_intersection(self, id_incident, id_incident2):
+    def calculate_intersection(self, id_incident, id_incident2, cluster_index = -1, cluster_index2 = -1):
         # delete the previous calculations
         self.cur.execute("DELETE FROM intersections WHERE id_incident = {0}".format(id_incident))
         self.db.commit()
 
-        ips = get_ips(id_incident)
-        ips2 = get_ips(id_incident2)
+        if(cluster_index < 0):
+            cluster_index = get_selected_cluster(id_incident)
+        if(cluster_index2 < 0):
+            cluster_index2 = get_selected_cluster(id_incident2)
+
+        ips = get_ips(id_incident, cluster_index)
+        ips2 = get_ips(id_incident2, cluster_index2)
 
         total = len(set(ips).intersection(ips2))
 
