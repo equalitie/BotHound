@@ -88,6 +88,7 @@ class SessionExtractor():
 
         # get the logs from ES
         banned_ips = self.es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+        #banned_ips = []
 
         # get the logs from ES
         ats_records = self.es_handler.get(incident['start'], incident['stop'], incident['target'])
