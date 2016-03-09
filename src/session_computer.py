@@ -124,7 +124,7 @@ class SessionExtractor():
         #print ip_feature_db
         self.bothound_tools.add_sessions(incident['id'], ip_feature_db, banned_ips)
         self.bothound_tools.set_incident_process(incident['id'], False)
-
+        print "Incident {} processed.".format(incident['id'])
         return ip_feature_db
 
     def extract(self):

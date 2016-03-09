@@ -22,7 +22,8 @@ class BothoundTools():
         learn2bantools instance and will be used to save data back to the db
         """
         self.db = MySQLdb.connect(host = self.db_host, user = self.db_user, 
-            passwd = self.db_password,port = self.db_port)
+            passwd = self.db_password,port = self.db_port, charset='utf8',
+            use_unicode=True)
 
         #Create cursor object to allow query execution
         self.cur = self.db.cursor(MySQLdb.cursors.DictCursor)
@@ -209,7 +210,7 @@ class BothoundTools():
                 
                 country_name = ""
                 if (c is not None):
-                    country_name = c.name
+                    country_name = c.name.encode('ascii','ignore')
                 self.cur.execute("insert into countries(code, name) values ('{}', '{}')".format(country_code, country_name))
                 ids[country_code] = self.cur.lastrowid
                 features[feature_index] = self.cur.lastrowid

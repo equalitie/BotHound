@@ -99,53 +99,57 @@ class ESHandler:
         print >>f1, indexes
         print >>f1, ts_start
         print >>f1, ts_stop
-        """   
-        #pdb.set_trace()
-        page = self.es.search(index=indexes, 
-            scroll = '5m',
-            #search_type = 'scan',
-            size = 10000,
-            body = es_body
-            #add index between the quotation marks
-            )
+        """  
         result = []
-        sid = page['_scroll_id']
-        page_index = 0
-        scroll_size = page['hits']['total'] 
-        print "total # of hits : ", scroll_size
-        # Start scrolling
-
-        num_processed = 0
-        while (scroll_size > 0):
-            print "Scrolling...", page_index
-            # Do something with the obtained page
-            json_result = page['hits']['hits']
+        try: 
             #pdb.set_trace()
+            page = self.es.search(index=indexes, 
+                scroll = '5m',
+                #search_type = 'scan',
+                size = 10000,
+                body = es_body
+                #add index between the quotation marks
+                )
 
-            for log in json_result:
-                #print log['_source']['@timestamp']
-                cur_rec_dict = util.es_log_muncher.parse_es_json_object(log)
-                if cur_rec_dict:
-                    cur_ats_rec = ATSRecord(cur_rec_dict);
-                    #print cur_ats_rec.payload['time']
-                    result.append(cur_ats_rec);
-                    num_processed = num_processed +  1
-                        
-            print "num_processed: " + str(num_processed)
-            if(num_processed > 5000000):
-                break
-
-            page_index = page_index + 1
-            tStart = datetime.datetime.now()
-            page = self.es.scroll(scroll_id = sid, scroll = '5m')
-            print "scroll time ,sec:", (datetime.datetime.now() - tStart).total_seconds()
-
-            # Update the scroll ID
             sid = page['_scroll_id']
-            # Get the number of results that we returned in the last scroll
-            scroll_size = len(page['hits']['hits'])
-            #print "scroll size: " + str(scroll_size)
-  
+            page_index = 0
+            scroll_size = page['hits']['total'] 
+            print "total # of hits : ", scroll_size
+            # Start scrolling
+
+            num_processed = 0
+            while (scroll_size > 0):
+                print "Scrolling...", page_index
+                # Do something with the obtained page
+                json_result = page['hits']['hits']
+                #pdb.set_trace()
+
+                for log in json_result:
+                    #print log['_source']['@timestamp']
+                    cur_rec_dict = util.es_log_muncher.parse_es_json_object(log)
+                    if cur_rec_dict:
+                        cur_ats_rec = ATSRecord(cur_rec_dict);
+                        #print cur_ats_rec.payload['time']
+                        result.append(cur_ats_rec);
+                        num_processed = num_processed +  1
+                            
+                print "num_processed: " + str(num_processed)
+                if(num_processed > 5000000):
+                    break
+
+                page_index = page_index + 1
+                tStart = datetime.datetime.now()
+                page = self.es.scroll(scroll_id = sid, scroll = '5m')
+                print "scroll time ,sec:", (datetime.datetime.now() - tStart).total_seconds()
+
+                # Update the scroll ID
+                sid = page['_scroll_id']
+                # Get the number of results that we returned in the last scroll
+                scroll_size = len(page['hits']['hits'])
+                #print "scroll size: " + str(scroll_size)
+        except Exception as ex:
+            print ex
+ 
         return result
 
     def get_banjax(self, start, stop, target):
@@ -164,7 +168,7 @@ class ESHandler:
         #indexes = [start.strftime('deflect.log-%Y.%m.*')]
         #if(start.month != stop.month):
             #indexes.append(stop.strftime('deflect.log-%Y.%m.*'))
-        print "es.search() start..."
+        print "es.search() start banjax..."
         if (target is not None) :
             es_body = {
             "from" : 0, "size" : 10000,
@@ -224,53 +228,57 @@ class ESHandler:
         print >>f1, ts_start
         print >>f1, ts_stop
         """   
-        #pdb.set_trace()
-        page = self.es.search(index=indexes, 
-            scroll = '5m',
-            #search_type = 'scan',
-            size = 10000,
-            body = es_body
-            #add index between the quotation marks
-            )
-        result = []
-        sid = page['_scroll_id']
-        page_index = 0
-        total_size = page['hits']['total'] 
-        print "total # of Banjax hits : ", total_size
-        # Start scrolling
-        #pdb.set_trace()
-        num_processed = 0
-        scroll_size = total_size
         result = {}
-        while (scroll_size > 0):
-            print "Scrolling...", page_index
-
-            json_result = page['hits']['hits']
-            for log in json_result:
-                src = log["_source"]
-                if "client_ip" not in src:
-                    continue
-                v = {}
-                if "rule_type" in src:
-                    v['rule'] = src['rule_type']
-                
-                result[src['client_ip']] = v  
-
-            print "num_processed: " + str(num_processed)
-            if(num_processed > 5000000):
-                break
-
-            page_index = page_index + 1
-            tStart = datetime.datetime.now()
-            page = self.es.scroll(scroll_id = sid, scroll = '2m')
-            print "scroll time ,sec:", (datetime.datetime.now() - tStart).total_seconds()
-
-            # Update the scroll ID
+        try:
+            #pdb.set_trace()
+            page = self.es.search(index=indexes, 
+                scroll = '5m',
+                #search_type = 'scan',
+                size = 10000,
+                body = es_body
+                #add index between the quotation marks
+                )
+            result = []
             sid = page['_scroll_id']
-            # Get the number of results that we returned in the last scroll
-            scroll_size = len(page['hits']['hits'])
-            print "scroll size: " + str(scroll_size)
-    
+            page_index = 0
+            total_size = page['hits']['total'] 
+            print "total # of Banjax hits : ", total_size
+            # Start scrolling
+            #pdb.set_trace()
+            num_processed = 0
+            scroll_size = total_size
+            
+            while (scroll_size > 0):
+                print "Scrolling banjax...", page_index
+
+                json_result = page['hits']['hits']
+                for log in json_result:
+                    src = log["_source"]
+                    if "client_ip" not in src:
+                        continue
+                    v = {}
+                    if "rule_type" in src:
+                        v['rule'] = src['rule_type']
+                    
+                    result[src['client_ip']] = v  
+
+                print "num_processed: " + str(num_processed)
+                if(num_processed > 5000000):
+                    break
+
+                page_index = page_index + 1
+                tStart = datetime.datetime.now()
+                page = self.es.scroll(scroll_id = sid, scroll = '2m')
+                print "scroll time ,sec:", (datetime.datetime.now() - tStart).total_seconds()
+
+                # Update the scroll ID
+                sid = page['_scroll_id']
+                # Get the number of results that we returned in the last scroll
+                scroll_size = len(page['hits']['hits'])
+                print "scroll size: " + str(scroll_size)
+        except Exception as ex:
+            print ex
+
         return result
 
 

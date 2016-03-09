@@ -8,3 +8,4 @@ ua_parser
 bokeh
 pandas
 pycountry
+plotly
