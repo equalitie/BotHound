@@ -46,7 +46,7 @@ from features.src.feature_percentage_consecutive_requests import FeaturePercenta
 from features.src.feature_request_depth import FeatureRequestDepth
 from features.src.feature_request_depth_std import FeatureRequestDepthStd
 from features.src.feature_session_length import FeatureSessionLength
-#from features.src.feature_user_agent import FeatureUserAgent
+from features.src.feature_user_agent import FeatureUserAgent
 from features.src.feature_variance_request_interval import FeatureVarianceRequestInterval
 
 #train to ban and other tools
@@ -150,7 +150,69 @@ if __name__ == "__main__":
     bothound_tools = BothoundTools(conf)
     bothound_tools.connect_to_db()
 
-    session_extractor = SessionExtractor(bothound_tools)
-    session_extractor.extract()
+    #session_extractor = SessionExtractor(bothound_tools)
+    #session_extractor.extract()
 
+    
+    # Calculating common Banned Ips for a set of incidents
+    es_handler = ESHandler(bothound_tools.es_user, bothound_tools.es_password,
+            bothound_tools.es_host, bothound_tools.es_port)
+    #incidents = [24,25,26,19,27]
+    incidents = [29,30,31,32,33,34]
+    common = -1
+    print "processing..."
+    result = []
+    groups = []
+    for i in incidents:
+        incident = bothound_tools.get_incident(i)[0]
+        #pdb.set_trace()
+        banned_ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+        ips = []
+        for p in banned_ips.keys():
+            ips.append(p)
+        if(common<0):
+            common = set(ips)
+        else:
+            common = common.intersection(ips)
+
+        result.append([len(ips), len(common)])
+        groups.append(ips)
+
+    ip_counts = {}
+    for g in groups:
+        for ip in g:
+            if(ip in ip_counts):
+                ip_counts[ip] = ip_counts[ip] + 1
+            else:
+                ip_counts[ip] = 1
+
+    for i in range(1, len(incidents)+1):
+        cur_count = 0
+        for ip in ip_counts:
+            if(ip_counts[ip] == i):
+                cur_count = cur_count + 1
+        print cur_count, i
+
+
+    #calculate moving intersection
+    print "moving intersection"
+    for i in range(0, len(incidents)-1):
+        ips1 = set(groups[i])
+        ips2 = set(groups[i+1])
+        print i+1, i+2, len(ips1.intersection(ips2))
+ 
+    print "cross table"
+    cross_table = []
+    for i in range(0, len(incidents)-1):
+        for j in range(i+1, len(incidents)-1):
+           ips1 = set(groups[i])
+           ips2 = set(groups[j])
+           num = len(ips1.intersection(ips2))
+           cross_table.append(((i, j), num, num * 100.0 / min(len(ips1), len(ips2))))
+
+    sorted_cross_table = sorted(cross_table, key=lambda k: k[2], reverse=True) 
+    f1=open('cross_table.txt', 'w+')
+    for d in sorted_cross_table:
+        print >> f1, d
+    f1.close()
 

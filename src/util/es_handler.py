@@ -48,14 +48,22 @@ class ESHandler:
             #the size can be changed but apparentlay the current query does not show > 10000 results.
             "query": {
             "bool": {
-            "must": {
-                "match": {
-                  "client_request_host": { # http_host for banjax
+            "should": [
+                {"match": {
+                  "client_request_host": { 
                     "query": "{}".format(target),
+                    #"query": "www.kotsubynske.com.ua",
                     "type": "phrase"
                   }
-                }
-            },
+                }},
+                {"match": {
+                  "client_request_host": { 
+                    "query": "www.{}".format(target),
+                    #"query": "kotsubynske.com.ua",
+                    "type": "phrase"
+                  }
+                }}
+            ], "minimum_should_match": 1,
             "filter": {
                 "range": {
                 "@timestamp": {
@@ -99,7 +107,8 @@ class ESHandler:
         print >>f1, indexes
         print >>f1, ts_start
         print >>f1, ts_stop
-        """  
+        pdb.set_trace()
+        """ 
         result = []
         try: 
             #pdb.set_trace()
@@ -114,7 +123,8 @@ class ESHandler:
             sid = page['_scroll_id']
             page_index = 0
             scroll_size = page['hits']['total'] 
-            print "total # of hits : ", scroll_size
+            total_size = scroll_size
+            print "total # of hits : ", total_size
             # Start scrolling
 
             num_processed = 0
@@ -129,11 +139,22 @@ class ESHandler:
                     cur_rec_dict = util.es_log_muncher.parse_es_json_object(log)
                     if cur_rec_dict:
                         cur_ats_rec = ATSRecord(cur_rec_dict);
+
+                        '''
+                        if("location" in cur_ats_rec.payload):
+                            l = cur_ats_rec.payload['location']
+                            country = cur_ats_rec.payload['country_code']
+                            if(country == 'UA'):
+                                print country, cur_ats_rec.agent
+                                pdb.set_trace()
+                        '''
+
+
                         #print cur_ats_rec.payload['time']
                         result.append(cur_ats_rec);
                         num_processed = num_processed +  1
                             
-                print "num_processed: " + str(num_processed)
+                print "num_processed: " + str(num_processed) + ", total (" + str(total_size) + ")"
                 if(num_processed > 5000000):
                     break
 
@@ -176,14 +197,22 @@ class ESHandler:
             #the size can be changed but apparentlay the current query does not show > 10000 results.
             "query": {
             "bool": {
-            "must": {
-                "match": {
+            "should": [
+                {"match": {
                   "http_host": { 
                     "query": "{}".format(target),
+                    #"query": "www.kotsubynske.com.ua",
                     "type": "phrase"
                   }
-                }
-            },
+                }},
+                {"match": {
+                  "http_host": { 
+                    "query": "www.{}".format(target),
+                    #"query": "kotsubynske.com.ua",
+                    "type": "phrase"
+                  }
+                }}
+            ], "minimum_should_match": 1,
             "filter": {
                 "range": {
                 "@timestamp": {
@@ -220,14 +249,14 @@ class ESHandler:
         }
       }
     }
-        """
-        f1=open('./q.txt', 'w+')
-        print es_body
-        print >>f1, es_body
-        print >>f1, indexes
-        print >>f1, ts_start
-        print >>f1, ts_stop
-        """   
+        
+        #f1=open('q.txt', 'w+')
+        #s = json.dumps(es_body, indent = 4)
+        #print >>f1, start, stop
+        #print >>f1, indexes
+        #print >>f1, s
+        #f1.close()
+           
         result = {}
         try:
             #pdb.set_trace()
@@ -238,11 +267,17 @@ class ESHandler:
                 body = es_body
                 #add index between the quotation marks
                 )
-            result = []
+            #result = []
             sid = page['_scroll_id']
             page_index = 0
             total_size = page['hits']['total'] 
             print "total # of Banjax hits : ", total_size
+
+            #f1=open('q.txt', 'a+')
+            #print >> f1, "total # of Banjax hits : ", total_size
+            #f1.close()
+            #pdb.set_trace()
+
             # Start scrolling
             #pdb.set_trace()
             num_processed = 0
@@ -257,10 +292,14 @@ class ESHandler:
                     if "client_ip" not in src:
                         continue
                     v = {}
+                    v['count'] = 1
                     if "rule_type" in src:
                         v['rule'] = src['rule_type']
                     
-                    result[src['client_ip']] = v  
+                    if(src['client_ip'] in result):
+                        result[src['client_ip']]['count'] = result[src['client_ip']]['count'] + 1
+                    else:
+                        result[src['client_ip']] = v  
 
                 print "num_processed: " + str(num_processed)
                 if(num_processed > 5000000):

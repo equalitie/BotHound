@@ -78,6 +78,7 @@ class BothoundTools():
         "longitude FLOAT," #Feature Index 12
         "id_country INT," #Feature Index 13
         "id_deflectee INT," #Feature Index 14
+        "ua LONGTEXT,"
 
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
