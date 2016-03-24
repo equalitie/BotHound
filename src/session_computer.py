@@ -209,7 +209,7 @@ class SessionExtractor():
             print >> f1, s
         f1.close()
 
-    def calculate_sizes(self, incidents):
+    def calculate_unique_ips(self, incidents):
         es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
                 self.bothound_tools.es_host, self.bothound_tools.es_port)
 
@@ -228,7 +228,7 @@ class SessionExtractor():
         incident_urls = []
         for i in incidents:
             incident = self.bothound_tools.get_incident(i)[0]
-            urls = es_handler.get_banned_url_count(incident['start'], incident['stop'], incident['target'])
+            urls = es_handler.get_banned_urls(incident['start'], incident['stop'], incident['target'])
 
             urls_list = []
             for key, value in urls.iteritems():
@@ -240,13 +240,121 @@ class SessionExtractor():
 
             incident_urls.append(urls_sorted[0:num_most])
 
+        f1=open('urls.txt', 'w+')
         for urls in incident_urls:
             print "incident", i
             for url in urls:
                 print url[1], url[0]
+                print >> f1, url[1], url[0]
+        f1.close()
             
+    def calculate_responses(self, incidents):
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        res = []
+        for i in incidents:
+            incident = self.bothound_tools.get_incident(i)[0]
+            rates = es_handler.get_banned_responses(incident['start'], incident['stop'], incident['target'])
 
+            res_list = []
+            for key, value in rates.iteritems():
+                temp = [key,value]
+                res_list.append(temp)
 
+            res_sorted = sorted(res_list, key=lambda k: k[1], reverse=True) 
+            num_most = len(res_sorted) if len(res_sorted) < 3 else 3
+
+            res.append(res_sorted[0:num_most])
+
+        i = 1
+        for incident in res:
+            print "incident", i
+            i = i + 1
+            for r in incident:
+                print r[1], r[0]
+
+    def calculate_user_agents(self, incidents):
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        res = []
+        for i in incidents:
+            incident = self.bothound_tools.get_incident(i)[0]
+            res_dict = es_handler.get_banned_user_agents(incident['start'], incident['stop'], incident['target'])
+
+            res_list = []
+            for key, value in res_dict.iteritems():
+                temp = [key,value]
+                res_list.append(temp)
+
+            res_sorted = sorted(res_list, key=lambda k: k[1], reverse=True) 
+            num_most = len(res_sorted) if len(res_sorted) < 50 else 50
+            print "incident", i, "winner", res_sorted[0]
+            res.append(res_sorted[0:num_most])
+
+        i = 1
+        f1=open('user_agents_Spider.txt', 'w+')
+        for incident in res:
+            print >>f1, "incident", i
+            print "incident", i
+            i = i + 1
+            for r in incident:
+                print >> f1, r[0], r[1] 
+                print r[0], r[1] 
+        f1.close()
+
+    def get_banned_ips(self, incidents):
+
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        index = 1
+        for i in incidents:
+            incident = self.bothound_tools.get_incident(i)[0]
+            ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+
+            f1=open('incident_{}({}).txt'.format(index, i), 'w+')
+            for ip in ips:
+                #pdb.set_trace()
+                print >> f1, ip
+            f1.close()
+            index = index + 1
+
+    def calculate_banned_devices(self, incidents):
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        res = []
+        for i in incidents:
+            incident = self.bothound_tools.get_incident(i)[0]
+            res_dict = es_handler.get_banned_devices(incident['start'], incident['stop'], incident['target'])
+
+            devices = {}
+            for key, value in res_dict.iteritems():
+                if value in devices:
+                    devices[value] = devices[value] + 1 
+                else:
+                    devices[value] = 1 
+
+            res_list = []
+            for key, value in devices.iteritems():
+                temp = [key,value]
+                res_list.append(temp)
+
+            res_sorted = sorted(res_list, key=lambda k: k[1], reverse=True) 
+            num_most = len(res_sorted) if len(res_sorted) < 40 else 40
+            if len(res_sorted) > 0:
+                print "incident", i, "winner", res_sorted[0]
+            res.append(res_sorted[0:num_most])
+
+        i = 1
+        f1=open('devices.txt', 'w+')
+        for incident in res:
+            print >>f1, "incident", i
+            print "incident", i
+            i = i + 1
+            for r in incident:
+                print >> f1, r[0], r[1] 
+                print r[0], r[1] 
+        f1.close()
+        
 
 if __name__ == "__main__":
 
@@ -256,18 +364,29 @@ if __name__ == "__main__":
     bothound_tools = BothoundTools(conf)
     bothound_tools.connect_to_db()
 
+
     session_extractor = SessionExtractor(bothound_tools)
 
     #session_extractor.extract()
 
-    incidents = [24,25,26,19,27]
-    #id_incidents = [29,30,31,32,33,34]
-
+    #id_incidents = [24,25,26,19,27]
+    id_incidents = [29,30,31,32,33,34]
 
     #session_extractor.calculate_cross_table(id_incidents)
     
-    #session_extractor.calculate_sizes(id_incidents)
+    #session_extractor.calculate_unique_ips(id_incidents)
 
-    urls = session_extractor.calculate_urls(incidents)
+    #urls = session_extractor.calculate_urls(id_incidents)
+
+    #session_extractor.calculate_responses(id_incidents)
+
+    #session_extractor.get_banned_ips(id_incidents)
+
+    #session_extractor.calculate_user_agents(id_incidents)
+
+    session_extractor.calculate_banned_devices(id_incidents)
+
+    
+
     
 

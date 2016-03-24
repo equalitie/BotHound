@@ -266,6 +266,7 @@ class ESHandler:
             while (scroll_size > 0):
                 json_result = page['hits']['hits']
                 for log in json_result:
+                    num_processed = num_processed + 1
                     src = log["_source"]
                     if "client_ip" not in src:
                         continue
@@ -292,7 +293,7 @@ class ESHandler:
 
         return result
 
-    def get_banned_url_count(self, start, stop, target):
+    def get_banned_urls(self, start, stop, target):
         ips = self.get_banjax(start, stop, target)
 
         indexes, body = self._get_param_deflect(start, stop, target)        
@@ -334,5 +335,136 @@ class ESHandler:
  
         return result
 
-#print len(query_result(0,0,0))
-#print query_deflect_logs(0,0,0)
+    def get_banned_responses(self, start, stop, target):
+        ips = self.get_banjax(start, stop, target)
+
+        indexes, body = self._get_param_deflect(start, stop, target)        
+        print "es.search() start..."
+        result = {}
+        try: 
+            page = self.es.search(index=indexes, scroll = '5m', #search_type = 'scan',
+                size = 10000, body = body)
+
+            sid = page['_scroll_id']
+            page_index = 0
+            scroll_size = page['hits']['total'] 
+            total_size = scroll_size
+            print "total # of hits : ", total_size
+            num_processed = 0
+            while (scroll_size > 0):
+                json_result = page['hits']['hits']
+                for log in json_result:
+                    num_processed = num_processed + 1
+                    s = log["_source"]
+                    #pdb.set_trace()
+                    if "http_response_code" not in s:
+                        continue
+                    if "client_ip" not in s:
+                        continue
+                    if s["client_ip"] in ips :
+                        code = s["http_response_code"]
+                        if code in result :
+                            result[code] = result[code] + 1
+                        else:
+                            result[code] = 1
+                            
+                print "progress:{},{:.1f}%...".format(num_processed, 100.0*num_processed/total_size)
+                page_index = page_index + 1
+                page = self.es.scroll(scroll_id = sid, scroll = '5m')
+                sid = page['_scroll_id']
+                scroll_size = len(page['hits']['hits'])
+        except Exception as ex:
+            print ex
+ 
+        return result
+
+    def get_banned_user_agents(self, start, stop, target):
+        indexes, body = self._get_param_banjax(start, stop, target)        
+        print "es.search() start banjax..."
+        result = {}
+        try: 
+            page = self.es.search(index=indexes, scroll = '5m', #search_type = 'scan',
+                size = 10000, body = body)
+
+            sid = page['_scroll_id']
+            page_index = 0
+            scroll_size = page['hits']['total'] 
+            total_size = scroll_size
+            print "total # of hits : ", total_size
+            num_processed = 0
+            num_skipped = 0
+            while (scroll_size > 0):
+                json_result = page['hits']['hits']
+                for log in json_result:
+                    num_processed = num_processed + 1
+                    src = log["_source"]
+                    if "client_ua" not in src:
+                        continue
+
+                    if "ua" not in src:
+                        continue
+                    device = src['ua']["device"]
+
+                    if device != "Spider":
+                        continue
+
+                    if(src['client_ua'] in result):
+                        result[src['client_ua']] = result[src['client_ua']] + 1
+                    else:
+                        result[src['client_ua']] = 1  
+                            
+                print "progress:{},{:.1f}%...".format(num_processed, 100.0*num_processed/total_size)
+                page_index = page_index + 1
+                page = self.es.scroll(scroll_id = sid, scroll = '5m')
+                sid = page['_scroll_id']
+                scroll_size = len(page['hits']['hits'])
+
+        except Exception as ex:
+            print ex
+ 
+        return result
+
+    def get_banned_devices(self, start, stop, target):
+        indexes, body = self._get_param_banjax(start, stop, target)        
+        print "es.search() start banjax..."
+        result = {}
+        try: 
+            page = self.es.search(index=indexes, scroll = '5m', #search_type = 'scan',
+                size = 10000, body = body)
+
+            sid = page['_scroll_id']
+            page_index = 0
+            scroll_size = page['hits']['total'] 
+            total_size = scroll_size
+            print "total # of hits : ", total_size
+            num_processed = 0
+            num_skipped = 0
+            while (scroll_size > 0):
+                json_result = page['hits']['hits']
+                for log in json_result:
+                    num_processed = num_processed + 1
+                    src = log["_source"]
+                    if "ua" not in src:
+                        num_skipped = num_skipped + 1
+                        continue
+                    device = src['ua']["device"]
+
+                    if 'client_ip' not in src:
+                        continue
+                    ip = src['client_ip']
+
+                    if "WordPress" not in src['client_ua'] :
+                        continue
+
+                    result[ip] = device
+
+                print "progress:{},{:.1f}%...".format(num_processed, 100.0*num_processed/total_size)
+                page_index = page_index + 1
+                page = self.es.scroll(scroll_id = sid, scroll = '5m')
+                sid = page['_scroll_id']
+                scroll_size = len(page['hits']['hits'])
+
+        except Exception as ex:
+            print ex
+ 
+        return result

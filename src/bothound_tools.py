@@ -466,23 +466,24 @@ class BothoundTools():
         self.cur.execute("DELETE FROM intersections WHERE id_incident = {0}".format(id_incident))
         self.db.commit()
 
-        if(cluster_index < 0):
-            cluster_index = get_selected_cluster(id_incident)
-        if(cluster_index2 < 0):
-            cluster_index2 = get_selected_cluster(id_incident2)
+        #if(cluster_index < 0):
+        #    cluster_index = self.get_selected_cluster(id_incident)
+        #if(cluster_index2 < 0):
+        #    cluster_index2 = self.get_selected_cluster(id_incident2)
 
-        ips = get_ips(id_incident, cluster_index)
-        ips2 = get_ips(id_incident2, cluster_index2)
+        ips = self.get_ips(id_incident, cluster_index)
+        ips2 = self.get_ips(id_incident2, cluster_index2)
 
         total = len(set(ips).intersection(ips2))
 
         #update the table
-        sql = """INSERT INTO intersections (`id`, `id_incident`, `id_incident2`, `total`, 
-        `intersection`, `intersection2`) VALUES ({},{},{},{},{},{})""".format(0,
-        id_incident, id_incident2, total, total*100.0/len(ips), total*100.0/len(ips2))
+        if(len(ips2) > 0) and (len(ips) > 0):
+            sql = """INSERT INTO intersections (`id`, `id_incident`, `id_incident2`, `total`, 
+            `intersection`, `intersection2`) VALUES ({},{},{},{},{},{})""".format(0,
+            id_incident, id_incident2, total, total*100.0/len(ips), total*100.0/len(ips2))
 
-        self.cur.execute(sql)
-        self.db.commit()
+            self.cur.execute(sql)
+            self.db.commit()
         return 
 
     def calculate_all_intersections(self, id_incident):
@@ -491,9 +492,9 @@ class BothoundTools():
             self.calculate_intersection(id_incident, incident["id"])
 
     def save_clustering(self, sessions, clusters):
-        for session, label in zip(sessions, clusters):
+        for session, cluster in zip(sessions, clusters):
             self.cur.execute("update sessions set cluster_index={} WHERE id = {}".format(cluster,session["id"]))
-        db.commit()
+        self.db.commit()
 
     def save_selected_cluster(self, id_incident, selected_cluster):
         self.cur.execute("update incidents set cluster_index={} WHERE id = {}".format(selected_cluster,id_incident))
