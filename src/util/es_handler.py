@@ -9,6 +9,7 @@ import pdb
 from util.ats_record import ATSRecord
 import util.es_log_muncher 
 import datetime
+import re
 
 class ESHandler:
     def __init__(self, es_user, es_password, es_host, es_port):
@@ -457,6 +458,64 @@ class ESHandler:
                         continue
 
                     result[ip] = device
+
+                print "progress:{},{:.1f}%...".format(num_processed, 100.0*num_processed/total_size)
+                page_index = page_index + 1
+                page = self.es.scroll(scroll_id = sid, scroll = '5m')
+                sid = page['_scroll_id']
+                scroll_size = len(page['hits']['hits'])
+
+        except Exception as ex:
+            print ex
+ 
+        return result
+
+    def get_pingback_domains(self, start, stop, target):
+        indexes, body = self._get_param_banjax(start, stop, target)        
+        print "es.search() start banjax..."
+        result = {}
+        try: 
+            page = self.es.search(index=indexes, scroll = '5m', #search_type = 'scan',
+                size = 10000, body = body)
+
+            sid = page['_scroll_id']
+            page_index = 0
+            scroll_size = page['hits']['total'] 
+            total_size = scroll_size
+            print "total # of hits : ", total_size
+            num_processed = 0
+            num_skipped = 0
+            while (scroll_size > 0):
+                json_result = page['hits']['hits']
+                for log in json_result:
+                    num_processed = num_processed + 1
+                    src = log["_source"]
+                    if 'client_ua' not in src:
+                        continue
+                    if "ua" not in src:
+                        continue
+                    device = src['ua']["device"]
+
+                    if 'client_ip' not in src:
+                        continue
+                    ip = src['client_ip']
+
+                    if device != "Spider" :
+                        continue
+
+                    domain = re.search("(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})",
+                        src['client_ua'])
+                    if domain is None or domain.groups() == 0 :
+                        continue
+                    domain = domain.groups()[0]
+                    if domain.endswith(';'):
+                        domain = domain[:-1]
+                    domain = domain.encode('ascii', 'ignore')
+                    
+                    if domain not in result :
+                        result[domain] = 1
+                    else:
+                        result[domain] = result[domain] + 1
 
                 print "progress:{},{:.1f}%...".format(num_processed, 100.0*num_processed/total_size)
                 page_index = page_index + 1

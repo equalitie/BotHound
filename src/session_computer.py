@@ -28,7 +28,7 @@ sys.path.append(src_dir)
 
 import numpy as np
 import logging
-import datetime
+from datetime import datetime, timedelta
 import calendar
 
 #learn2ban classes:
@@ -68,7 +68,7 @@ class SessionExtractor():
         """
         store the exp config in self's attribute.
         """
-        utc_datetime = datetime.datetime.utcnow()
+        utc_datetime = datetime.utcnow()
         self.bothound_tools = bothound_tools
         self.es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
             bothound_tools.es_host, self.bothound_tools.es_port)
@@ -83,12 +83,8 @@ class SessionExtractor():
         if(incident is None):
             return 
 
-        #start = 1451560001000
-        #stop =  1451560001000
-
         # get the logs from ES
         banned_ips = self.es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
-        #banned_ips = []
 
         # get the logs from ES
         ats_records = self.es_handler.get(incident['start'], incident['stop'], incident['target'])
@@ -354,7 +350,79 @@ class SessionExtractor():
                 print >> f1, r[0], r[1] 
                 print r[0], r[1] 
         f1.close()
-        
+    
+    def calculate_pingback_domains(self, incidents):
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+
+        index = 1
+        for i in incidents:
+            incident = self.bothound_tools.get_incident(i)[0]
+            res_dict = es_handler.get_pingback_domains(incident['start'], incident['stop'], incident['target'])
+
+            res_list = []
+            for key, value in res_dict.iteritems():
+                temp = [key,value]
+                res_list.append(temp)
+
+            res_sorted = sorted(res_list, key=lambda k: k[1], reverse=True) 
+            f1=open('pingback_domains_incident_{}({}).txt'.format(index,i), 'w+')
+            for r in res_sorted:
+                print >> f1, r[0] 
+            f1.close()
+            index = index + 1
+
+    def find_intersections(self, id_incidents, 
+        date_from, 
+        date_to, 
+        file_name = "intersection_report.txt",
+        title = "",
+        target_domain_no_www = None, #domain without "www."
+        window_size_in_hours = 24,
+        threshold_in_percentage = 10.0) :
+
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        ips = []
+        start = date_from
+        f1=open(file_name, 'w+')
+        print >>f1, "Intersection Report:", title
+        print >>f1, "\nIncidents:"
+        for id_incident in id_incidents:
+            incident = self.bothound_tools.get_incident(id_incident)[0]
+            ips = ips + es_handler.get_banjax(incident['start'], incident['stop'], incident['target']).keys()
+            print >>f1, "Incident {}, target domain = {}, Start:{}, Stop:{}".format(
+                id_incident, incident['target'], incident['start'], incident['stop'])
+
+        ips = set(ips)
+        print >>f1, "\nNotal number of banned IPs:", len(ips)
+
+        print >>f1, "\nFinding intersection with data from {} to {}".format(date_from, date_to)
+        print >>f1, "Threshold = {}%".format(threshold_in_percentage)
+        print >>f1, "Target domain = {}".format(target_domain_no_www if target_domain_no_www != None else "all domains")
+        print >>f1, "Sliding window size : {} hours".format(window_size_in_hours)
+        print >>f1, "\nIntersections found:"
+
+        while start < date_to:
+            stop = start + timedelta(hours=window_size_in_hours)
+            print "processing {}, + {} hours...".format(start, window_size_in_hours)
+
+            ips_to_check = es_handler.get_banjax(start, stop, target_domain_no_www).keys()
+            ips_to_check = set(ips_to_check)
+            intersection = len(ips.intersection(ips_to_check))
+            percentage1 = intersection * 100.0 / len(ips)
+            percentage2 = intersection * 100.0 / len(ips_to_check)
+
+            if percentage1 > threshold_in_percentage or percentage2 > threshold_in_percentage:
+                print >> f1, "Original:{:.2f}%, Window:{:.2f}%, Total: {}, start : {} + {} hours".format(
+                    percentage1, percentage2, intersection, start, window_size_in_hours)
+
+            start = start + timedelta(hours=window_size_in_hours/2.0)
+
+        print >>f1, "End"
+        f1.close()
+
+           
 
 if __name__ == "__main__":
 
@@ -384,9 +452,24 @@ if __name__ == "__main__":
 
     #session_extractor.calculate_user_agents(id_incidents)
 
-    session_extractor.calculate_banned_devices(id_incidents)
+    #session_extractor.calculate_banned_devices(id_incidents)
 
+    #session_extractor.calculate_pingback_domains(id_incidents)
+
+    """
+    session_extractor.find_intersections([33], date_from = datetime(2016,03,01),date_to = datetime(2016,03,03),
+        file_name = "intersection_bdsmovement.txt",title = "Bdsmovement.org", window_size_in_hours = 4)
+    """
+
+    #session_extractor.find_intersections([29,30,31,32,33,34], 
+    #   date_from = datetime(2015,1,1), date_to = datetime(2016,2,1),
+    #   file_name = "intersection_bdsmovement.txt",
+    #   title = "Bdsmovement.org",  window_size_in_hours = 24, threshold_in_percentage = 3)
     
+    session_extractor.find_intersections([24,25,26,19,27], 
+        date_from = datetime(2015,1,1), date_to = datetime(2016,2,1),
+        file_name = "intersection_kotsubynske.txt",
+        title = "Kotsubynske.org",  window_size_in_hours = 24, threshold_in_percentage = 3)
 
     
 
