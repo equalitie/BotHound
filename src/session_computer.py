@@ -190,8 +190,8 @@ class SessionExtractor():
 
         print "cross table"
         cross_table = []
-        for i in range(0, len(incidents)-1):
-            for j in range(i+1, len(incidents)-1):
+        for i in range(0, len(incidents)):
+            for j in range(i+1, len(incidents)):
                ips1 = set(groups[i])
                ips2 = set(groups[j])
                num = len(ips1.intersection(ips2))
@@ -204,6 +204,84 @@ class SessionExtractor():
             print s
             print >> f1, s
         f1.close()
+
+    def calculate_incident_intersection(self, incidents1, incidents2):
+        # Calculating common Banned Ips for two sets of incidents
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        print "processing..."
+        ips1 = []
+        for i in incidents1:
+            incident = self.bothound_tools.get_incident(i)[0]
+            #pdb.set_trace()
+            banned_ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+            for p in banned_ips.keys():
+                ips1.append(p)
+        
+        ips2 = []    
+        for i in incidents2:
+            incident = self.bothound_tools.get_incident(i)[0]
+            #pdb.set_trace()
+            banned_ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+            for p in banned_ips.keys():
+                ips2.append(p)
+
+        print "cross table"
+        ips1 = set(ips1)
+        ips2 = set(ips2)
+        num = len(ips1.intersection(ips2))
+        d = [len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2))]
+        print "group1", incidents1
+        print "group2", incidents2
+        s = "{},{},{},{:.1f}%".format(d[0], d[1], d[2], d[3])
+        print s
+
+    def calculate_incident_intersection_plus_ua(self, incidents1, incidents2):
+        # Calculating common Banned Ips for two sets of incidents
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        print "processing..."
+        ips1 = []
+        for i in incidents1:
+            incident = self.bothound_tools.get_incident(i)[0]
+            #pdb.set_trace()
+            banned_ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+            for key, value in banned_ips.iteritems():
+                ips1.append([key, value])
+        
+        ips2 = []    
+        for i in incidents2:
+            incident = self.bothound_tools.get_incident(i)[0]
+            #pdb.set_trace()
+            banned_ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+            for key, value in banned_ips.iteritems():
+                ips2.append([key, value])
+
+        intersection = 0
+        processed_ips = {}
+        for ip1 in ips1:
+            for ip2 in ips2:
+                if ip1[0] == ip2[0]:
+                    if ip1[0] in processed_ips:
+                        break
+                    found = False                        
+                    for ua1 in ip1[1]['ua'].keys():
+                        for ua2 in ip2[1]['ua'].keys():
+                            if(ua1 == ua2):
+                                found = True
+                                break
+                        if found:
+                            break
+                    if found:
+                        intersection = intersection + 1
+                        processed_ips[ip1[0]] = 1
+
+        num = intersection
+        d = [len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2))]
+        print "group1", incidents1
+        print "group2", incidents2
+        s = "{},{},{},{:.1f}%".format(d[0], d[1], d[2], d[3])
+        print s
 
     def calculate_unique_ips(self, incidents):
         es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
@@ -288,7 +366,7 @@ class SessionExtractor():
             res.append(res_sorted[0:num_most])
 
         i = 1
-        f1=open('user_agents_Spider.txt', 'w+')
+        f1=open('user_agents.txt', 'w+')
         for incident in res:
             print >>f1, "incident", i
             print "incident", i
@@ -434,13 +512,18 @@ if __name__ == "__main__":
 
 
     session_extractor = SessionExtractor(bothound_tools)
-
-    #session_extractor.extract()
+    
+    session_extractor.extract()
 
     #id_incidents = [24,25,26,19,27]
+    #id_incidents = [29,30,31,32,33,34]
     id_incidents = [29,30,31,32,33,34]
 
     #session_extractor.calculate_cross_table(id_incidents)
+
+    #session_extractor.calculate_incident_intersection([29,30,31,32,33,34], [35])
+
+    #session_extractor.calculate_incident_intersection_plus_ua([29,30,31,32,33,34], [35])
     
     #session_extractor.calculate_unique_ips(id_incidents)
 
@@ -457,19 +540,26 @@ if __name__ == "__main__":
     #session_extractor.calculate_pingback_domains(id_incidents)
 
     """
+    # test for find_intersections
     session_extractor.find_intersections([33], date_from = datetime(2016,03,01),date_to = datetime(2016,03,03),
         file_name = "intersection_bdsmovement.txt",title = "Bdsmovement.org", window_size_in_hours = 4)
     """
 
-    #session_extractor.find_intersections([29,30,31,32,33,34], 
-    #   date_from = datetime(2015,1,1), date_to = datetime(2016,2,1),
-    #   file_name = "intersection_bdsmovement.txt",
-    #   title = "Bdsmovement.org",  window_size_in_hours = 24, threshold_in_percentage = 3)
-    
+    # bdsmovement intersections
+    """
+    session_extractor.find_intersections([29,30,31,32,33,34], 
+       date_from = datetime(2015,1,1), date_to = datetime(2016,2,1),
+       file_name = "intersection_bdsmovement.txt",
+       title = "Bdsmovement.org",  window_size_in_hours = 24, threshold_in_percentage = 3)
+    """
+  
+
+    # kotsubynske intersections
+    """
     session_extractor.find_intersections([24,25,26,19,27], 
         date_from = datetime(2015,1,1), date_to = datetime(2016,2,1),
         file_name = "intersection_kotsubynske.txt",
         title = "Kotsubynske.org",  window_size_in_hours = 24, threshold_in_percentage = 3)
-
+    """
     
 

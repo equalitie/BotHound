@@ -35,28 +35,31 @@ class ESHandler:
 
         es_body = ""
         if (target is not None) :
+            sites = target.split(",")
+            should = []
+            for s in sites:
+                should.append(
+                {"match": {
+                  "client_request_host": { 
+                    "query": "{}".format(s),
+                    "type": "phrase"
+                  }
+                }})
+                should.append(
+                {"match": {
+                  "client_request_host": { 
+                    "query": "www.{}".format(s),
+                    "type": "phrase"
+                  }
+                }})
+
             es_body = {
             "from" : 0, "size" : 10000,
             "sort" :[{"@timestamp":{"order":"asc"}}],
             #the size can be changed but apparentlay the current query does not show > 10000 results.
             "query": {
             "bool": {
-            "should": [
-                {"match": {
-                  "client_request_host": { 
-                    "query": "{}".format(target),
-                    #"query": "www.kotsubynske.com.ua",
-                    "type": "phrase"
-                  }
-                }},
-                {"match": {
-                  "client_request_host": { 
-                    "query": "www.{}".format(target),
-                    #"query": "kotsubynske.com.ua",
-                    "type": "phrase"
-                  }
-                }}
-            ], "minimum_should_match": 1,
+            "should": should, "minimum_should_match": 1,
             "filter": {
                 "range": {
                 "@timestamp": {
@@ -105,28 +108,31 @@ class ESHandler:
 
         es_body = ""
         if (target is not None) :
+            sites = target.split(",")
+            should = []
+            for s in sites:
+                should.append(
+                {"match": {
+                  "http_host": { 
+                    "query": "{}".format(s),
+                    "type": "phrase"
+                  }
+                }})
+                should.append(
+                {"match": {
+                  "http_host": { 
+                    "query": "www.{}".format(s),
+                    "type": "phrase"
+                  }
+                }})
+
             es_body = {
             "from" : 0, "size" : 10000,
             "sort" :[{"@timestamp":{"order":"asc"}}],
             #the size can be changed but apparentlay the current query does not show > 10000 results.
             "query": {
             "bool": {
-            "should": [
-                {"match": {
-                  "http_host": { 
-                    "query": "{}".format(target),
-                    #"query": "www.kotsubynske.com.ua",
-                    "type": "phrase"
-                  }
-                }},
-                {"match": {
-                  "http_host": { 
-                    "query": "www.{}".format(target),
-                    #"query": "kotsubynske.com.ua",
-                    "type": "phrase"
-                  }
-                }}
-            ], "minimum_should_match": 1,
+            "should": should, "minimum_should_match": 1,
             "filter": {
                 "range": {
                 "@timestamp": {
@@ -193,7 +199,7 @@ class ESHandler:
                     #print log['_source']['@timestamp']
                     cur_rec_dict = util.es_log_muncher.parse_es_json_object(log)
                     if cur_rec_dict:
-                        cur_ats_rec = ATSRecord(cur_rec_dict);
+                        cur_ats_rec = ATSRecord(cur_rec_dict)
                         result.append(cur_ats_rec);
                         num_processed = num_processed +  1
                             
@@ -276,9 +282,13 @@ class ESHandler:
                     if "rule_type" in src:
                         v['rule'] = src['rule_type']
                     
+                    ua = src['client_ua'] if "client_ua" in src else 'None' 
+
                     if(src['client_ip'] in result):
                         result[src['client_ip']]['count'] = result[src['client_ip']]['count'] + 1
+                        result[src['client_ip']]['ua'][result[src['client_ip']]['count']] = 1
                     else:
+                        v['ua'] = {ua:1}
                         result[src['client_ip']] = v  
 
                 print "progress:{},{:.1f}%...".format(num_processed, 100.0*num_processed/total_size)
@@ -293,6 +303,7 @@ class ESHandler:
             print ex
 
         return result
+
 
     def get_banned_urls(self, start, stop, target):
         ips = self.get_banjax(start, stop, target)
@@ -406,8 +417,8 @@ class ESHandler:
                         continue
                     device = src['ua']["device"]
 
-                    if device != "Spider":
-                        continue
+                    #if device != "Spider":
+                    #    continue
 
                     if(src['client_ua'] in result):
                         result[src['client_ua']] = result[src['client_ua']] + 1

@@ -243,7 +243,7 @@ class BothoundTools():
             values = [0,id_incident,0, ip_hash, ip_enctypted[0], ip_enctypted[1], ip_enctypted[2], ban]
             for feature in features:
                 values.append(features[feature])
-
+            
             self.cur.execute(insert_sql, values)
 
         self.db.commit()
