@@ -59,11 +59,13 @@ class BothoundTools():
         self.cur.execute("create table IF NOT EXISTS sessions (id INT NOT NULL AUTO_INCREMENT, "
         "id_incident INT NOT NULL, "
         "cluster_index INT, "
+        "cluster_index2 INT, "
         "IP VARCHAR(45), "
         "IP_ENCRYPTED LONGTEXT, "
         "IP_IV LONGTEXT, "
         "IP_TAG LONGTEXT, "
         "ban BOOL,"
+        "attack BOOL,"
         "request_interval FLOAT, " #Feature Index 1
         "ua_change_rate FLOAT, " #Feature Index 2
         "html2image_ratio FLOAT, " #Feature Index 3
@@ -226,7 +228,7 @@ class BothoundTools():
     def add_sessions(self, id_incident, ip_feature_db, banned_ips):
         for ip in ip_feature_db:
 
-            insert_sql = "insert into sessions values (%s,%s,%s,%s,%s,%s,%s,%s"
+            insert_sql = "insert into sessions values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s"
             features = ip_feature_db[ip]
             for feature in features:
                 insert_sql += ",%s"
@@ -240,7 +242,7 @@ class BothoundTools():
             ban = 0
             if(banned_ips is not None and ip[0] in banned_ips):
                 ban = 1
-            values = [0,id_incident,0, ip_hash, ip_enctypted[0], ip_enctypted[1], ip_enctypted[2], ban]
+            values = [0,id_incident,0,0, ip_hash, ip_enctypted[0], ip_enctypted[1], ip_enctypted[2], ban, 0]
             for feature in features:
                 values.append(features[feature])
             
@@ -496,9 +498,27 @@ class BothoundTools():
             self.cur.execute("update sessions set cluster_index={} WHERE id = {}".format(cluster,session["id"]))
         self.db.commit()
 
+    def save_clustering2(self, sessions, clusters):
+        for session, cluster in zip(sessions, clusters):
+            self.cur.execute("update sessions set cluster_index2={} WHERE id = {}".format(cluster,session["id"]))
+        self.db.commit()
+
     def save_selected_cluster(self, id_incident, selected_cluster):
         self.cur.execute("update incidents set cluster_index={} WHERE id = {}".format(selected_cluster,id_incident))
         self.db.commit()
+
+    def label_attack(self, id_incident, selected_clusters, selected_clusters2=[]):
+    	self.cur.execute("update sessions set attack=0 WHERE id_incident = {}".format(id_incident))
+    	for cluster in selected_clusters:
+    		if len(selected_clusters2) > 0 :
+    			for cluster2 in selected_clusters2:
+    				self.cur.execute("update sessions set attack=1 WHERE id_incident = {} and cluster_index={} and cluster_index2={}".format(
+    					id_incident, cluster, cluster2))
+    		else:
+    			self.cur.execute("update sessions set attack=1 WHERE id_incident = {} and cluster_index={}".format(
+    				id_incident, cluster))
+        self.db.commit()
+
 
     def __init__(self, conf):
         #we would like people to able to use the tool object even

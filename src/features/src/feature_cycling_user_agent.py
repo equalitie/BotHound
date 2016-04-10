@@ -39,9 +39,18 @@ class FeatureCyclingUserAgent(Learn2BanFeature):
                 else:
                     ua_request_map[cur_UA] += 1
             
+            """
             #Sort UAs by number of requests
             sorted_ua_request_map = sorted(ua_request_map.iteritems(), key=operator.itemgetter(1), reverse=True)
             #Percentage of times UA has changed over the course of the requests
             feature_value = float(sorted_ua_request_map[0][1])/float(len(ip_recs[cur_ip_rec]))
+            """
+
+            # calculate the rate of UA change during the session
+            num_ua_changed = 0
+            for key, value in ua_request_map.iteritems():
+                num_ua_changed += value
+            session_length = (len(ip_recs[cur_ip_rec]) > 1) and (ip_recs[cur_ip_rec][-1].time_to_second() - ip_recs[cur_ip_rec][0].time_to_second()) or 1
+            feature_value = float(num_ua_changed) / session_length
 
             self.append_feature(cur_ip_rec, feature_value)

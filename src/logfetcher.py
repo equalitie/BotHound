@@ -45,7 +45,6 @@ class LogFetcher(threading.Thread):
     
             message = zmq_decrypted 
             logging.debug("decrypted message: %s"%message)
-            
             return self.process_received_message(action, message);
         except:
             logging.error("Invalid message: %s"%zmq_message)

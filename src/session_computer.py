@@ -500,6 +500,48 @@ class SessionExtractor():
         print >>f1, "End"
         f1.close()
 
+    def calculate_intersection_with_file(self, id_incidents, input_file_name, file_name):
+        ips_to_check = []
+        with open(input_file_name) as f:
+            ips_to_check = f.read().splitlines()        
+
+        es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
+                self.bothound_tools.es_host, self.bothound_tools.es_port)
+        ips = []
+        f1=open(file_name, 'w+')
+        print >>f1, "Intersection Report"
+        print >>f1, "\nIncidents:"
+        for id_incident in id_incidents:
+            incident = self.bothound_tools.get_incident(id_incident)[0]
+            ips = ips + es_handler.get_banjax(incident['start'], incident['stop'], incident['target']).keys()
+            print >>f1, "Incident {}, target domain = {}, Start:{}, Stop:{}".format(
+                id_incident, incident['target'], incident['start'], incident['stop'])
+
+        ips = set(ips)
+        print >>f1, "\nNotal number of incident IPs:", len(ips)
+
+        print >>f1, "\nFinding intersection with data from file : {}".format(input_file_name)
+        print >>f1, "\nNotal number of file IPs:", len(ips_to_check)
+
+
+        ips_to_check = set(ips_to_check)
+        intersection = len(ips.intersection(ips_to_check))
+        percentage1 = intersection * 100.0 / len(ips)
+        percentage2 = intersection * 100.0 / len(ips_to_check)
+
+        print >> f1, "_______________"
+        print >> f1, "Intersection:"
+        print >> f1, "Total number of identical IPs:{}".format(intersection)
+        print >> f1, "Percentage of incidents IPs:{:.2f}%".format(percentage1)
+        print >> f1, "Percentage of file's IPs:{:.2f}%".format(percentage2)
+
+        print "_______________"
+        print "Intersection:"
+        print "Total number of identical IPs:{}".format(intersection)
+        print "Percentage of incidents IPs:{:.2f}%".format(percentage1)
+        print "Percentage of file's IPs:{:.2f}%".format(percentage2)
+
+        f1.close()
            
 
 if __name__ == "__main__":
@@ -521,9 +563,9 @@ if __name__ == "__main__":
 
     #session_extractor.calculate_cross_table(id_incidents)
 
-    #session_extractor.calculate_incident_intersection([29,30,31,32,33,34], [35])
+    session_extractor.calculate_incident_intersection([40], [35,36,37])
 
-    #session_extractor.calculate_incident_intersection_plus_ua([29,30,31,32,33,34], [35])
+    #session_extractor.calculate_incident_intersection_plus_ua([29,30,31,32,33,34], [35,36,37])
     
     #session_extractor.calculate_unique_ips(id_incidents)
 
@@ -538,6 +580,15 @@ if __name__ == "__main__":
     #session_extractor.calculate_banned_devices(id_incidents)
 
     #session_extractor.calculate_pingback_domains(id_incidents)
+
+    #session_extractor.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wordpress_ips.deny", "./btselem/bds_vs_btselem_wordpress_ips.txt")
+    #session_extractor.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_stupid.deny", "./btselem/bds_vs_btselem_stupid.txt")
+    #session_extractor.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wp_20150515-00_ips.deny", "./btselem/bds_vs_btselem_wp_20150515-00_ips.txt")
+
+    #session_extractor.calculate_intersection_with_file([35,36,37], "./btselem/btselem_wordpress_ips.deny", "./btselem/btselem_vs_btselem_wordpress_ips.txt")
+    #session_extractor.calculate_intersection_with_file([35,36,37], "./btselem/btselem_stupid.deny", "./btselem/btselem_vs_btselem_stupid.txt")
+    #session_extractor.calculate_intersection_with_file([35,36,37], "./btselem/btselem_wp_20150515-00_ips.deny", "./btselem/btselem_vs_btselem_wp_20150515-00_ips.txt")
+
 
     """
     # test for find_intersections
@@ -561,5 +612,7 @@ if __name__ == "__main__":
         file_name = "intersection_kotsubynske.txt",
         title = "Kotsubynske.org",  window_size_in_hours = 24, threshold_in_percentage = 3)
     """
+
+
     
 

@@ -48,7 +48,7 @@ class FeatureUserAgent(Learn2BanFeature):
             sorted_agents = sorted(ua_list, key=lambda k: k[1], reverse=True) 
 
             s = sorted_agents[0][0]
-            self.append_feature(cur_ip_rec, s)
+            self.append_feature(cur_ip_rec, s.encode('ascii','ignore') if s is not None else "")
 
             """
             num = 3

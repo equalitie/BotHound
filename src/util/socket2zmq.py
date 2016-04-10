@@ -46,7 +46,7 @@ def main():
 
     parser.add_option("-Z", "--zmqport",
                       action="store", dest="zmqport",
-                      default=22622,
+                      default=22624,
                       help="ZMQ socket port")
 
     parser.add_option("-G", "--greymemoryport",

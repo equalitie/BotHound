@@ -74,6 +74,7 @@ class BothoundLiveSniffer(LogFetcher):
 
 
     def process_received_message(self, action, message):
+        #print action, message
         if (action == self.BOTBANGER_LOG):
             return self._process_botbanger_log(message)
         elif (action == self.GREYMEMORY_INFO):
@@ -83,6 +84,7 @@ class BothoundLiveSniffer(LogFetcher):
         try:
             decoded_message = message.split(',')
             #we need to decode them from b64
+
             for i in range(0, len(decoded_message)):
                 decoded_message[i] = decoded_message[i].decode('base64')
         except:
@@ -117,13 +119,15 @@ class BothoundLiveSniffer(LogFetcher):
         return self._clusterify(cur_log_rec)
 
     def _process_greymemory_info(self, message):
-        logging.debug("greymemory says " + "," + message)
+        print message
+        print str(message)
+        logging.debug("greymemory says " + "," + str(message))
 
         try:
             decoded_message = json.loads(message)        
-            if(decoded_message['message_type'] == 'anomaly_started') :
+            if(decoded_message['message type'] == 'anomaly_started') :
                 self._start_recording()
-            elif(decoded_message['message_type'] == 'anomaly_stopped') :
+            elif(decoded_message['message type'] == 'anomaly_stopped') :
                 self._stop_recording()
 
         except:
