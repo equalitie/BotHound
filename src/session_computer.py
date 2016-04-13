@@ -138,7 +138,7 @@ class SessionExtractor():
         for cur_sesion in session_feature_db:
             db_tools.store(cur_session)
 
-    def calculate_cross_table(self, incidents):
+    def calculate_cross_table_banjax(self, incidents):
         # Calculating common Banned Ips for a set of incidents
         es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
                 self.bothound_tools.es_host, self.bothound_tools.es_port)
@@ -197,6 +197,40 @@ class SessionExtractor():
                num = len(ips1.intersection(ips2))
                cross_table.append((i+1, j+1, len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2))))
 
+        sorted_cross_table = sorted(cross_table, key=lambda k: k[5], reverse=True) 
+        f1=open('cross_table.txt', 'w+')
+        for d in sorted_cross_table:
+            s = "{},{},{},{},{},{:.1f}%".format(d[0], d[1], d[2], d[3], d[4], d[5])
+            print s
+            print >> f1, s
+        f1.close()
+
+    def calculate_cross_table(self, incidents):
+        common = -1
+        result = []
+        groups = []
+        for i in incidents:
+            ips = self.bothound_tools.get_attack_ips(i)
+            #ips = self.bothound_tools.get_ips(i)
+            if(common<0):
+                common = set(ips)
+            else:
+                common = common.intersection(ips)
+
+            result.append([len(ips), len(common)])
+            groups.append(ips)
+            
+        #for i in range(0, len(groups)):
+        #    print "Incident", incidents[i], len(groups[i])
+
+        print "cross table"
+        cross_table = []
+        for i in range(0, len(incidents)):
+            for j in range(i+1, len(incidents)):
+               ips1 = set(groups[i])
+               ips2 = set(groups[j])
+               num = len(ips1.intersection(ips2))
+               cross_table.append((incidents[i], incidents[j], len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2)) if min(len(ips1), len(ips2)) > 0 else 0))
         sorted_cross_table = sorted(cross_table, key=lambda k: k[5], reverse=True) 
         f1=open('cross_table.txt', 'w+')
         for d in sorted_cross_table:
@@ -559,11 +593,15 @@ if __name__ == "__main__":
 
     #id_incidents = [24,25,26,19,27]
     #id_incidents = [29,30,31,32,33,34]
-    id_incidents = [29,30,31,32,33,34]
+    id_incidents = [29,30,31,32,33,34,36,37,39, 40]
 
-    #session_extractor.calculate_cross_table(id_incidents)
+    bothound_tools.incidents_summary(id_incidents)
+    
+    #bothound_tools.extract_attack_ips(id_incidents)
 
-    session_extractor.calculate_incident_intersection([40], [35,36,37])
+    session_extractor.calculate_cross_table(id_incidents)
+
+    #session_extractor.calculate_incident_intersection([40], [35,36,37])
 
     #session_extractor.calculate_incident_intersection_plus_ua([29,30,31,32,33,34], [35,36,37])
     

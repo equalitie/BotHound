@@ -13,6 +13,7 @@ from features.src.feature_geo import FeatureGEO
 from features.src.feature_deflectee import FeatureDeflectee
 
 from util.crypto import encrypt
+from util.crypto import decrypt
 import pdb
 
 class BothoundTools():
@@ -242,7 +243,7 @@ class BothoundTools():
             ban = 0
             if(banned_ips is not None and ip[0] in banned_ips):
                 ban = 1
-            values = [0,id_incident,0,0, ip_hash, ip_enctypted[0], ip_enctypted[1], ip_enctypted[2], ban, 0]
+            values = [0,id_incident,0,0, ip_hash, ip_enctypted[1], ip_enctypted[0], ip_enctypted[2], ban, 0]
             for feature in features:
                 values.append(features[feature])
             
@@ -254,12 +255,17 @@ class BothoundTools():
         self.cur.execute("select * from sessions WHERE id_incident = {0}".format(id_incident))
         return [dict(elem) for elem in self.cur.fetchall()]
 
+    def get_attack_ips(self, id_incident):
+        self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {0} and attack = 1".format(id_incident))
+        return [elem["IP"] for elem in self.cur.fetchall()]
+
+
     def get_ips(self, id_incident, cluster_index = -1):
         if cluster_index >= 0 :
-            self.cur.execute("select IP from sessions WHERE id_incident = {} "
+            self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {} "
                 "and cluster_index = {}".format(id_incident, cluster_index))
         else:
-            self.cur.execute("select IP from sessions WHERE id_incident = {0}".format(id_incident))
+            self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {0}".format(id_incident))
 
         return [elem["IP"] for elem in self.cur.fetchall()]
 
@@ -446,6 +452,9 @@ class BothoundTools():
     def encrypt(self, data):
         return encrypt(self.db_encryption_key, data, "")
 
+    def decrypt(self, data, data_iv, data_tag):
+        return decrypt(self.db_encryption_key, "", data_iv, data, data_tag)
+
     def hash(self, data):
         return hmac.new(data, self.db_hash_key, hashlib.sha256).digest()
 
@@ -507,19 +516,42 @@ class BothoundTools():
         self.cur.execute("update incidents set cluster_index={} WHERE id = {}".format(selected_cluster,id_incident))
         self.db.commit()
 
-    def label_attack(self, id_incident, selected_clusters, selected_clusters2=[]):
+    def clear_attack(self, id_incident):
     	self.cur.execute("update sessions set attack=0 WHERE id_incident = {}".format(id_incident))
+
+    def label_attack(self, id_incident, attack_number, selected_clusters, selected_clusters2=[]):
     	for cluster in selected_clusters:
     		if len(selected_clusters2) > 0 :
     			for cluster2 in selected_clusters2:
-    				self.cur.execute("update sessions set attack=1 WHERE id_incident = {} and cluster_index={} and cluster_index2={}".format(
-    					id_incident, cluster, cluster2))
+    				self.cur.execute("update sessions set attack={} WHERE id_incident = {} and cluster_index={} and cluster_index2={}".format(
+    					attack_number, id_incident, cluster, cluster2))
     		else:
     			self.cur.execute("update sessions set attack=1 WHERE id_incident = {} and cluster_index={}".format(
     				id_incident, cluster))
         self.db.commit()
 
+    def incidents_summary(self, id_incidents) :
+        for id in id_incidents:
 
+            self.cur.execute("SELECT COUNT(DISTINCT IP) AS Count FROM sessions  WHERE id_incident = {}".format(id))
+            num_ips = self.cur.fetchall()[0]['Count']
+            self.cur.execute("SELECT COUNT(DISTINCT IP) AS Count FROM sessions  WHERE id_incident = {} and attack > 0".format(id))
+            num_bots = self.cur.fetchall()[0]['Count']
+            #pdb.set_trace()
+            print "Incident {}, num IPs = {}, num Bots = {}".format(id, num_ips, num_bots)
+
+    def extract_attack_ips(self, id_incidents) :
+        for id in id_incidents:
+
+            f1=open("ips_incident_{}".format(id), 'w+')
+            pdb.set_trace()
+            self.cur.execute("SELECT DISTINCT IP_ENCRYPTED, IP_IV, IP_TAG  FROM sessions  WHERE id_incident = {} and attack > 0".format(id))
+            for elem in self.cur.fetchall():
+            	ip = self.decrypt(elem['IP_ENCRYPTED'], elem['IP_IV'],  elem['IP_TAG'])
+            	print >> f1, ip
+
+            f1.close()
+            
     def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this
