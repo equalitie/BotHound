@@ -30,6 +30,9 @@ class Learn2BanFeature(object):
 
         self._FEATURE_INDEX = -1 #This is an abstract class so no real feature
 
+    def get_feature_index(self):
+        return self._FEATURE_INDEX
+
     def compute(self):
         """
         The feature should overload this function to implement the feautere

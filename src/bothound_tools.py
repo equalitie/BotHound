@@ -11,6 +11,7 @@ import MySQLdb, pycountry
 
 from features.src.feature_geo import FeatureGEO
 from features.src.feature_deflectee import FeatureDeflectee
+from features.src.feature_user_agent import FeatureUserAgent
 
 from util.crypto import encrypt
 from util.crypto import decrypt
@@ -81,7 +82,6 @@ class BothoundTools():
         "longitude FLOAT," #Feature Index 12
         "id_country INT," #Feature Index 13
         "id_deflectee INT," #Feature Index 14
-        "ua LONGTEXT,"
 
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),  "    
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE ) ENGINE=INNODB;")
@@ -116,6 +116,33 @@ class BothoundTools():
         "PRIMARY KEY(id), INDEX index_incicent (id_incident),"
         "FOREIGN KEY (id_incident) REFERENCES incidents(id) ON DELETE CASCADE"
         ") ENGINE=INNODB;")
+
+         # user_agent table
+        self.cur.execute("create table IF NOT EXISTS user_agents (id INT NOT NULL AUTO_INCREMENT, "
+        "ua LONGTEXT, "
+        "device_family LONGTEXT,"
+        "os_family LONGTEXT,"
+        "os_major LONGTEXT,"
+        "os_minor LONGTEXT,"
+        "os_patch LONGTEXT,"
+        "os_patch_minor LONGTEXT,"
+        "ua_family LONGTEXT,"
+        "ua_major LONGTEXT,"
+        "ua_minor LONGTEXT,"
+        "ua_patch LONGTEXT,"
+        "PRIMARY KEY(id)) ENGINE=INNODB;")
+
+        # session_ua table
+        self.cur.execute("create table IF NOT EXISTS session_user_agent (id INT NOT NULL AUTO_INCREMENT, "
+        "id_session INT, "
+        "id_user_agent INT,"
+        "count INT,"
+        "INDEX index_ua (id_user_agent), INDEX index_session (id_session),"
+        "PRIMARY KEY(id),"
+        "FOREIGN KEY (id_session) REFERENCES sessions(id) ON DELETE CASCADE,"
+        "FOREIGN KEY (id_user_agent) REFERENCES user_agents(id) ON DELETE CASCADE"
+        ") ENGINE=INNODB;")
+
 
     def get_deflectees(self):
         self.cur.execute("select * from deflectees")
@@ -229,7 +256,7 @@ class BothoundTools():
     def add_sessions(self, id_incident, ip_feature_db, banned_ips):
         for ip in ip_feature_db:
 
-            insert_sql = "insert into sessions values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s"
+            insert_sql = "insert into sessions values (%s,%s,%s,%s,%s,%s,%s,%s,%s"
             features = ip_feature_db[ip]
             for feature in features:
                 insert_sql += ",%s"
@@ -240,19 +267,56 @@ class BothoundTools():
             ip_enctypted = self.encrypt(ip_ascii)
             ip_hash = self.hash(ip_ascii)
 
+            ua_feature = FeatureUserAgent(None, None)
             ban = 0
             if(banned_ips is not None and ip[0] in banned_ips):
                 ban = 1
             values = [0,id_incident,0,0, ip_hash, ip_enctypted[1], ip_enctypted[0], ip_enctypted[2], ban, 0]
             for feature in features:
-                values.append(features[feature])
-            
-            self.cur.execute(insert_sql, values)
+                if(feature != ua_feature.get_feature_index()):
+                    values.append(features[feature])
+            #   pdb.set_trace()   
+            try:         
+                self.cur.execute(insert_sql, values)
+                id_session = self.cur.lastrowid
+                for key, value in features[ua_feature.get_feature_index()].iteritems():
+                    insert_sql = "INSERT INTO user_agents ("\
+                    "id, ua, device_family,os_family,os_major,os_minor,os_patch,os_patch_minor,ua_family,ua_major,ua_minor,ua_patch"\
+                    ") VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE id=id"
+                    self.cur.execute(insert_sql,[
+                        0,key,
+                        value["device_family"],
+                        value["os_family"],
+                        value["os_major"],
+                        value["os_minor"],   
+                        value["os_patch"],
+                        value["os_patch_minor"],
+                        value["ua_family"],
+                        value["ua_major"],
+                        value["ua_minor"],
+                        value["ua_patch"]]
+                        )
+                    self.cur.execute("select id from user_agents where ua =%s",[key])
+                    id_user_agent = self.cur.fetchall()[0]['id']
+                    insert_sql = "INSERT INTO session_user_agent ("\
+                    "id, id_session, id_user_agent, count"\
+                    ") VALUES(%s, %s,%s,%s)"
+                    self.cur.execute(insert_sql,[0,id_session, id_user_agent, value["count"]])
 
+            except Exception,e:
+                g = 0
+                pdb.set_trace()
+
+
+               
         self.db.commit()
 
     def get_sessions(self, id_incident):
         self.cur.execute("select * from sessions WHERE id_incident = {0}".format(id_incident))
+        return [dict(elem) for elem in self.cur.fetchall()]
+
+    def get_sessions_atack(self, id_incident):
+        self.cur.execute("select * from sessions WHERE id_incident = {0} and attack > 0".format(id_incident))
         return [dict(elem) for elem in self.cur.fetchall()]
 
     def get_attack_ips(self, id_incident):
@@ -526,7 +590,7 @@ class BothoundTools():
     				self.cur.execute("update sessions set attack={} WHERE id_incident = {} and cluster_index={} and cluster_index2={}".format(
     					attack_number, id_incident, cluster, cluster2))
     		else:
-    			self.cur.execute("update sessions set attack=1 WHERE id_incident = {} and cluster_index={}".format(
+    			self.cur.execute("update sessions set attack={} WHERE id_incident = {} and cluster_index={}".format(attack_number,
     				id_incident, cluster))
         self.db.commit()
 
@@ -540,18 +604,74 @@ class BothoundTools():
             #pdb.set_trace()
             print "Incident {}, num IPs = {}, num Bots = {}".format(id, num_ips, num_bots)
 
-    def extract_attack_ips(self, id_incidents) :
-        for id in id_incidents:
+    def extract_attack_ips(self, id_incidents, attack_id = 0) :
+        """
+        stores the ips of the attackers in a file
 
-            f1=open("ips_incident_{}".format(id), 'w+')
-            pdb.set_trace()
-            self.cur.execute("SELECT DISTINCT IP_ENCRYPTED, IP_IV, IP_TAG  FROM sessions  WHERE id_incident = {} and attack > 0".format(id))
+        INPUT:: 
+        id_incidents:  a list of incidents
+        attack_id: the id of attack whose ips needs to be printed, if not specified then 
+                   stores all attackers
+        """
+        for id in id_incidents:
+            f1=open("ips_incident_{}_{}".format(id, attack_id), 'w+')
+            sql_string = "SELECT DISTINCT IP_ENCRYPTED, IP_IV, IP_TAG FROM sessions  WHERE id_incident = {} and attack ".format(id)
+            sql_string += (attack_id != 0) and " = {}".format(attack_id) or " > 0"
+            self.cur.execute(sql_string)
             for elem in self.cur.fetchall():
             	ip = self.decrypt(elem['IP_ENCRYPTED'], elem['IP_IV'],  elem['IP_TAG'])
             	print >> f1, ip
 
             f1.close()
             
+    def calculate_cluster_centers(self, id_incidents, features = []):
+        if len(features) == 0:
+            features = [
+                "request_interval", #Feature Index 1
+                "ua_change_rate", #Feature Index 2
+                "html2image_ratio", #Feature Index 3
+                "variance_request_interval", #Feature Index 4
+                "payload_average", #Feature Index 5
+                "error_rate", #Feature Index 6
+                "request_depth", #Feature Index 7
+                "request_depth_std", #Feature Index 8
+                "session_length", #Feature Index 9
+                "percentage_cons_requests" #Feature Index 10
+            ]
+
+        for id_incident in id_incidents:
+            sessions = self.get_sessions_atack(id_incident)
+            X = []
+            clusters = []
+            clusters2 = []
+            for s in sessions:
+                row = []
+                for f in features:
+                    row.append(s[f])
+                X.append(row)
+                clusters.append(s["cluster_index"])
+                clusters2.append(s["cluster_index2"])
+            X = np.array(X)
+            clusters = np.array(clusters)
+            clusters2 = np.array(clusters2)
+            print "_____________ Incident {}:".format(id_incident)
+            cluster_indexes = np.unique(clusters)
+            for cluster_index in np.nditer(cluster_indexes):
+                print "Cluster {}:".format(cluster_index)
+                selection = clusters == cluster_index
+                X_cur = X[selection]
+
+                cur_clusters2 = clusters2[selection]
+                cluster_indexes2 = np.unique(cur_clusters2)
+                for cluster_index2 in cluster_indexes2:
+                    print "Second Cluster {}:".format(cluster_index2)
+                    X_cur2 = X_cur[cur_clusters2 == cluster_index2]
+                    averages = np.average(X_cur2, axis=0)
+                    variances = np.var(X_cur2, axis=0)
+                    for i in range(0,len(features)):
+                        print "{} : average = {}, var = {}".format(features[i], averages[i], variances[i])
+
+
     def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this

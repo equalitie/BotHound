@@ -37,28 +37,24 @@ class FeatureUserAgent(Learn2BanFeature):
                 return
 
             for record in ip_recs[cur_ip_rec]:
+                ua = record.agent
+                if ua is None:
+                    ua = ""
+                else:
+                    ua = ua.encode('ascii','ignore')
                 if(record.agent in user_agents):
-                    user_agents[record.agent]["count"] = user_agents[record.agent]["count"] + 1
+                    user_agents[ua]["count"] = user_agents[ua]["count"] + 1
                     continue
-                user_agents[record.agent] = {"count" : 1}
+                user_agents[ua] = {"count" : 1}
 
-            ua_list = []
-            for key, value in user_agents.iteritems():
-                ua_list.append([key,value])
-            sorted_agents = sorted(ua_list, key=lambda k: k[1], reverse=True) 
-
-            s = sorted_agents[0][0]
-            self.append_feature(cur_ip_rec, s.encode('ascii','ignore') if s is not None else "")
-
-            """
-            num = 3
-            if num > len(sorted_agents):
-                num = len(sorted_agents)
-            s = json.dumps(sorted_agents[0:num])
-            pdb.set_trace()
-            self.append_feature(cur_ip_rec, s)
-            """
+            #ua_list = []
+            #for key, value in user_agents.iteritems():
+            #    ua_list.append([key,value])
             
+            #sorted_agents = sorted(ua_list, key=lambda k: k[1], reverse=True) 
+            #s = sorted_agents[0][0]
+            #self.append_feature(cur_ip_rec, s.encode('ascii','ignore') if s is not None else "")
+
             # parsing the string
             #parsed = user_agent_parser.Parse(record.agent)
             #print parsed['device']['family'] 
@@ -66,7 +62,23 @@ class FeatureUserAgent(Learn2BanFeature):
             #print parsed['user_agent']['family']
             #print '-'
             
-           # feature_value  = self.string_kernel(record.agent)
+            for key, value in user_agents.iteritems():
+                if key is None:
+                    continue
+                parsed = user_agent_parser.Parse(key)
+                value["device_family"] = parsed["device"]["family"]
+                value["os_family"] = parsed["os"]["family"]
+                value["os_major"] = parsed["os"]["major"]
+                value["os_minor"] = parsed["os"]["minor"]   
+                value["os_patch"] = parsed["os"]["patch"]
+                value["os_patch_minor"] = parsed["os"]["patch_minor"]
+                value["ua_family"] = parsed["user_agent"]["family"]
+                value["ua_major"] = parsed["user_agent"]["major"]
+                value["ua_minor"] = parsed["user_agent"]["minor"]
+                value["ua_patch"] = parsed["user_agent"]["patch"]
+                user_agents[key] = value
+
+            self.append_feature(cur_ip_rec, user_agents)
 
 
 
