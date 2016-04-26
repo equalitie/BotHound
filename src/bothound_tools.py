@@ -16,6 +16,7 @@ from features.src.feature_user_agent import FeatureUserAgent
 from util.crypto import encrypt
 from util.crypto import decrypt
 import pdb
+from sklearn import preprocessing
 
 class BothoundTools():
     def connect_to_db(self):
@@ -624,7 +625,7 @@ class BothoundTools():
 
             f1.close()
             
-    def calculate_cluster_centers(self, id_incidents, features = []):
+    def calculate_distances(self, id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []):
         if len(features) == 0:
             features = [
                 "request_interval", #Feature Index 1
@@ -639,38 +640,90 @@ class BothoundTools():
                 "percentage_cons_requests" #Feature Index 10
             ]
 
+        # get the target cluster
+        sessions = self.get_sessions_atack(id_incident)
+        X_target = []
+        for s in sessions:
+            if(id_attack > 0):
+                if s["attack"] != id_attack:
+                    continue
+            else:
+                if(s["cluster_index"] in cluster_indexes1):
+                    continue
+                if(len(cluster_indexes2) > 0 and s["cluster_index2"] in cluster_indexes2):
+                    continue;
+            row = []
+            for f in features:
+                row.append(s[f])
+            X_target.append(row)
+        X_target = np.array(X_target)
+
+        incidents = []
+        #X_for_normalization = X_target
+
+        X_for_normalization=np.empty([0,len(features)])
         for id_incident in id_incidents:
+            incident = {"id" : id_incident}
             sessions = self.get_sessions_atack(id_incident)
             X = []
-            clusters = []
-            clusters2 = []
+            attacks = []
             for s in sessions:
                 row = []
                 for f in features:
                     row.append(s[f])
                 X.append(row)
-                clusters.append(s["cluster_index"])
-                clusters2.append(s["cluster_index2"])
+                attacks.append(s["attack"])
             X = np.array(X)
-            clusters = np.array(clusters)
-            clusters2 = np.array(clusters2)
-            print "_____________ Incident {}:".format(id_incident)
-            cluster_indexes = np.unique(clusters)
-            for cluster_index in np.nditer(cluster_indexes):
-                print "Cluster {}:".format(cluster_index)
-                selection = clusters == cluster_index
-                X_cur = X[selection]
+            attacks = np.array(attacks)
+            attack_indexes = np.unique(attacks)
+            incident["attack_indexes"] = []
+            for attack_index in attack_indexes:
+                incident["attack_indexes"].append(attack_index)
+                incident["X"] = X[attacks == attack_index]
+            X_for_normalization = np.concatenate((X_for_normalization, X), axis=0)
 
-                cur_clusters2 = clusters2[selection]
-                cluster_indexes2 = np.unique(cur_clusters2)
-                for cluster_index2 in cluster_indexes2:
-                    print "Second Cluster {}:".format(cluster_index2)
-                    X_cur2 = X_cur[cur_clusters2 == cluster_index2]
-                    averages = np.average(X_cur2, axis=0)
-                    variances = np.var(X_cur2, axis=0)
-                    for i in range(0,len(features)):
-                        print "{} : average = {}, var = {}".format(features[i], averages[i], variances[i])
+            incidents.append(incident)
 
+        # normalization 
+        std_scale = preprocessing.StandardScaler().fit(X_for_normalization)
+        X_target = std_scale.transform(X_target)
+
+        averages_target = np.average(X_target, axis=0)
+        variances_target = np.var(X_target, axis=0)
+
+        distances = []
+        for incident in incidents:
+            #print "_____________ Incident {}:".format(incident["id"])
+            
+            for attack_index in incident["attack_indexes"]:
+                #print "Attack {}:".format(attack_index)
+                d = {"incident" : incident["id"]}
+                d["attack"] = attack_index
+
+                incident["X"] = std_scale.transform(incident["X"])
+                averages = np.average(incident["X"], axis=0)
+                variances = np.var(incident["X"], axis=0)
+                #pdb.set_trace()
+                distance = 0.0
+                for i in range(0,len(features)):
+                    inc = np.square(averages_target[i] - averages[i])
+                    if(inc != 0.0):
+                        #print "feature", features[i]
+                        #print averages_target[i],  averages[i]
+                        #print variances_target[i],variances[i]
+                        inc /= np.sqrt(variances_target[i] * variances[i])
+
+                    #print inc
+                    #pdb.set_trace()
+                        distance = distance + inc
+                d["distance"] = distance 
+                distances.append(d)           
+                #print attack_index, "Distance = {}".format(distance)
+
+        sorted_distances = sorted(distances, key=lambda x: x["distance"], reverse=True) 
+
+        for d in sorted_distances:
+            print d
 
     def __init__(self, conf):
         #we would like people to able to use the tool object even
