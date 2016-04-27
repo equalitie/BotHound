@@ -16,6 +16,7 @@ from features.src.feature_user_agent import FeatureUserAgent
 from util.crypto import encrypt
 from util.crypto import decrypt
 import pdb
+import sys
 from sklearn import preprocessing
 
 class BothoundTools():
@@ -626,6 +627,7 @@ class BothoundTools():
             f1.close()
             
     def calculate_distances(self, id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []):
+
         if len(features) == 0:
             features = [
                 "request_interval", #Feature Index 1
@@ -639,6 +641,14 @@ class BothoundTools():
                 "session_length", #Feature Index 9
                 "percentage_cons_requests" #Feature Index 10
             ]
+
+        print "#######################  Distance calculator"
+        print "Target indicent = ", id_incident
+        print "Target attack = ", id_attack
+        print "Target clustre index  1 = ", cluster_indexes1
+        print "Target clustre index  2 = ", cluster_indexes2
+        print "Incidents = ", id_incidents
+        print "Features = ", features
 
         # get the target cluster
         sessions = self.get_sessions_atack(id_incident)
@@ -659,12 +669,15 @@ class BothoundTools():
         X_target = np.array(X_target)
 
         incidents = []
-        #X_for_normalization = X_target
 
+        #X_for_normalization = X_target
         X_for_normalization=np.empty([0,len(features)])
+
         for id_incident in id_incidents:
             incident = {"id" : id_incident}
             sessions = self.get_sessions_atack(id_incident)
+            if(len(sessions) == 0):
+                continue
             X = []
             attacks = []
             for s in sessions:
@@ -676,10 +689,12 @@ class BothoundTools():
             X = np.array(X)
             attacks = np.array(attacks)
             attack_indexes = np.unique(attacks)
-            incident["attack_indexes"] = []
+            incident["attacks"] = []
             for attack_index in attack_indexes:
-                incident["attack_indexes"].append(attack_index)
-                incident["X"] = X[attacks == attack_index]
+                attack = {"index" : attack_index}
+                attack["X"] = X[attacks == attack_index]
+                incident["attacks"].append(attack)
+
             X_for_normalization = np.concatenate((X_for_normalization, X), axis=0)
 
             incidents.append(incident)
@@ -694,24 +709,26 @@ class BothoundTools():
         distances = []
         for incident in incidents:
             #print "_____________ Incident {}:".format(incident["id"])
-            
-            for attack_index in incident["attack_indexes"]:
-                #print "Attack {}:".format(attack_index)
-                d = {"incident" : incident["id"]}
-                d["attack"] = attack_index
 
-                incident["X"] = std_scale.transform(incident["X"])
-                averages = np.average(incident["X"], axis=0)
-                variances = np.var(incident["X"], axis=0)
+            for attack in incident["attacks"]:
+                d = {"incident" : incident["id"]}
+                d["attack"] = attack["index"]
+
+                attack["X"] = std_scale.transform(attack["X"])
+                averages = np.average(attack["X"], axis=0)
+                variances = np.var(attack["X"], axis=0)
                 #pdb.set_trace()
                 distance = 0.0
                 for i in range(0,len(features)):
                     inc = np.square(averages_target[i] - averages[i])
                     if(inc != 0.0):
-                        #print "feature", features[i]
+                        #print features[i]
                         #print averages_target[i],  averages[i]
                         #print variances_target[i],variances[i]
-                        inc /= np.sqrt(variances_target[i] * variances[i])
+                        if(variances_target[i] * variances[i] == 0):
+                            inc = sys.float_info.max
+                        else:
+                            inc /= np.sqrt(variances_target[i] * variances[i])
 
                     #print inc
                     #pdb.set_trace()

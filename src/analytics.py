@@ -487,7 +487,9 @@ if __name__ == "__main__":
 	#id_incidents = [29,30,31,32,33,34]
 	#id_incidents = [29,30,31,32,33,34] #,36,37,39, 40]
 
-	bothound_tools.calculate_distances(31, 5, [], [], [29,30,31,32,33,34,36,37,39,40])
+	#id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []
+	bothound_tools.calculate_distances(id_incident = 31, id_attack = 5, cluster_indexes1 = [], cluster_indexes2 = [], 
+		id_incidents = [29,30,31,32,33,34,36,37,39,40,42], features = [])
 
 	#bothound_tools.incidents_summary(id_incidents)
 	
