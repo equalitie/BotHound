@@ -147,11 +147,6 @@ if __name__ == "__main__":
 	bothound_tools = BothoundTools(conf)
 	bothound_tools.connect_to_db()
 
-
 	session_extractor = SessionExtractor(bothound_tools)
 	session_extractor.extract()
-
-
-
-	
 

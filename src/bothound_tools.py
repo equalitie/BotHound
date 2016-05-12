@@ -321,8 +321,32 @@ class BothoundTools():
         self.cur.execute("select * from sessions WHERE id_incident = {0} and attack > 0".format(id_incident))
         return [dict(elem) for elem in self.cur.fetchall()]
 
-    def get_attack_ips(self, id_incident):
-        self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {0} and attack = 1".format(id_incident))
+    def get_banned_ips(self, id_incidents):
+
+        sql_where = " where id_incident in ("
+        for id in id_incidents:
+            sql_where = sql_where + "{},".format(id)
+        sql_where = sql_where[:-1]
+        sql_where += ") "
+
+        self.cur.execute("select DISTINCT IP from sessions " +
+                sql_where + " and ban > 0")
+        return [elem["IP"] for elem in self.cur.fetchall()]
+    
+    def get_attack_ips(self, id_incidents, id_attack = 0):
+
+        sql_where = " where id_incident in ("
+        for id in id_incidents:
+            sql_where = sql_where + "{},".format(id)
+        sql_where = sql_where[:-1]
+        sql_where += ") "
+
+        if id_attack > 0:
+            self.cur.execute("select DISTINCT IP from sessions " +
+                sql_where + " and attack = {}".format(id_attack))
+        else:
+            self.cur.execute("select DISTINCT IP from sessions " +
+                sql_where + " and attack > 0 ")
         return [elem["IP"] for elem in self.cur.fetchall()]
 
 
@@ -606,7 +630,7 @@ class BothoundTools():
             #pdb.set_trace()
             print "Incident {}, num IPs = {}, num Bots = {}".format(id, num_ips, num_bots)
 
-    def extract_attack_ips(self, id_incidents, attack_id = 0) :
+    def extract_attack_ips_per_incident(self, id_incidents, attack_id = 0) :
         """
         stores the ips of the attackers in a file
 
@@ -626,6 +650,43 @@ class BothoundTools():
 
             f1.close()
             
+    def get_attack_ips_decrypted(self, id_incidents, id_attack = 0):
+
+        sql_where = " where id_incident in ("
+        for id in id_incidents:
+            sql_where = sql_where + "{},".format(id)
+        sql_where = sql_where[:-1]
+        sql_where += ") "
+
+        sql = "select IP_ENCRYPTED, IP_IV, IP_TAG from sessions " + sql_where
+        if id_attack > 0:
+            sql += " and attack = {}".format(id_attack) + " group by IP_ENCRYPTED"
+        else:
+            sql += " and attack > 0 " + " group by IP_ENCRYPTED"
+        self.cur.execute(sql)
+
+        return [self.decrypt(elem['IP_ENCRYPTED'], elem['IP_IV'],  elem['IP_TAG']) for elem in self.cur.fetchall()]
+
+    def extract_attack_ips(self, id_incidents) :
+        """
+        stores the ips of the attackers in a file
+
+        INPUT:: 
+        id_incidents:  a list of incidents
+        """
+
+        attacks = self.get_attack_ids(id_incidents)
+
+        for attack in attacks:
+            if attack <= 0 :
+                continue
+            ips = self.get_attack_ips_decrypted(id_incidents, attack)
+            f1=open("ips_botnet_{}.txt".format(attack), 'w+')
+            for ip in ips:
+                print >> f1, ip
+
+            f1.close()
+
     def calculate_distances(self, id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []):
 
         if len(features) == 0:
@@ -742,6 +803,42 @@ class BothoundTools():
         for d in sorted_distances:
             print d
 
+    def get_attack_ids(self, id_incidents):
+
+        sql = "select distinctrow attack from sessions  "
+        sql_where = "where id_incident in ("
+        for id in id_incidents:
+            sql_where = sql_where + "{},".format(id)
+        sql_where = sql_where[:-1]
+        sql_where += ")"
+
+        self.cur.execute(sql + sql_where + " and attack > 0")
+        res = [elem["attack"] for elem in self.cur.fetchall()]
+        res = sorted(res, key=lambda x: x, reverse=False) 
+        return res
+
+    def get_attacks(self, id_incidents):
+
+        sql = "select distinctrow attack from sessions  "
+        sql_where = "where id_incident in ("
+        for id in id_incidents:
+            sql_where = sql_where + "{},".format(id)
+        sql_where = sql_where[:-1]
+        sql_where += ")"
+
+        attacks = self.get_attack_ids(id_incidents)
+        res = []
+        for elem in attacks:
+            attack = {"id" : elem}
+            if attack["id"] <= 0 :
+                continue
+            self.cur.execute("select count(distinctrow IP) as count from sessions " + sql_where + " and attack ={}".format(elem))
+            attack["count"] = self.cur.fetchall()[0]['count']
+            res.append(attack)
+
+        res = sorted(res, key=lambda k: k["id"], reverse=False) 
+        return res
+    
     def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this

@@ -104,7 +104,7 @@ class Analytics():
 		result = []
 		groups = []
 		for i in incidents:
-			ips = self.bothound_tools.get_attack_ips(i)
+			ips = self.bothound_tools.get_attack_ips([i])
 			#ips = self.bothound_tools.get_ips(i)
 			if(common<0):
 				common = set(ips)
@@ -120,11 +120,11 @@ class Analytics():
 		print "cross table"
 		cross_table = []
 		for i in range(0, len(incidents)):
+			ips1 = set(groups[i])
 			for j in range(i+1, len(incidents)):
-			   ips1 = set(groups[i])
-			   ips2 = set(groups[j])
-			   num = len(ips1.intersection(ips2))
-			   cross_table.append((incidents[i], incidents[j], len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2)) if min(len(ips1), len(ips2)) > 0 else 0))
+				ips2 = set(groups[j])
+				num = len(ips1.intersection(ips2))
+				cross_table.append((incidents[i], incidents[j], len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2)) if min(len(ips1), len(ips2)) > 0 else 0))
 		sorted_cross_table = sorted(cross_table, key=lambda k: k[5], reverse=True) 
 		f1=open('cross_table.txt', 'w+')
 		for d in sorted_cross_table:
@@ -133,36 +133,35 @@ class Analytics():
 			print >> f1, s
 		f1.close()
 
-	def calculate_incident_intersection(self, incidents1, incidents2):
-		# Calculating common Banned Ips for two sets of incidents
-		es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
-				self.bothound_tools.es_host, self.bothound_tools.es_port)
-		print "processing..."
-		ips1 = []
-		for i in incidents1:
-			incident = self.bothound_tools.get_incident(i)[0]
-			#pdb.set_trace()
-			banned_ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
-			for p in banned_ips.keys():
-				ips1.append(p)
-		
-		ips2 = []    
-		for i in incidents2:
-			incident = self.bothound_tools.get_incident(i)[0]
-			#pdb.set_trace()
-			banned_ips = es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
-			for p in banned_ips.keys():
-				ips2.append(p)
+	def calculate_incident_intersection(self, incidents1, attack,  incidents2):
 
-		print "cross table"
-		ips1 = set(ips1)
-		ips2 = set(ips2)
-		num = len(ips1.intersection(ips2))
-		d = [len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2))]
-		print "group1", incidents1
-		print "group2", incidents2
-		s = "{},{},{},{:.1f}%".format(d[0], d[1], d[2], d[3])
-		print s
+		print "Intersection with incidents:"
+		print incidents2
+		attacks  = []
+		if(attack > 0):
+			attacks.append(attack)
+		else:
+			attacks = self.bothound_tools.get_attack_ids(incidents1)
+
+		for a in attacks:
+			print "\n========================== Attack {}:".format(a)
+			ips1 = self.bothound_tools.get_attack_ips(incidents1, a)
+			ips1 = set(ips1)
+			print "Num IPs in the attack {}:".format(len(ips1))
+			cross_table = []
+			for i in incidents2:
+			   ips2 = set(self.bothound_tools.get_attack_ips([i]))
+			   #ips2 = set(self.bothound_tools.get_banned_ips([i]))
+			   num = len(ips1.intersection(ips2))
+			   cross_table.append((i, len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2)) if min(len(ips1), len(ips2)) > 0 else 0))
+
+			sorted_cross_table = sorted(cross_table, key=lambda k: k[4], reverse=True) 
+			for d in sorted_cross_table:
+				print "\n__________ Incident {}:".format(d[0])
+ 				print "Num IPs in the incident {}:".format(d[2])
+				print "# identical   IPs: {}".format(d[3])
+				print "% of attack   IPs: {:.2f}%".format(100.0*d[3]/d[1])
+				print "% of incident IPs: {:.2f}%".format(100.0*d[3]/d[2])
 
 	def calculate_incident_intersection_plus_ua(self, incidents1, incidents2):
 		# Calculating common Banned Ips for two sets of incidents
@@ -429,48 +428,47 @@ class Analytics():
 		f1.close()
 
 	def calculate_intersection_with_file(self, id_incidents, input_file_name, file_name):
-		ips_to_check = []
+		lines = []
 		with open(input_file_name) as f:
-			ips_to_check = f.read().splitlines()        
+			lines = f.read().splitlines()  
 
-		es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
-				self.bothound_tools.es_host, self.bothound_tools.es_port)
+		ips_to_check = []
+		for line in lines:
+			splitted_line = line.split('|')
+			if(len(splitted_line) < 2):
+				continue
+			ip = splitted_line[len(splitted_line)-2]
+			
+			#splitted_line = line.split(',')
+			#if(len(splitted_line) < 3):
+			#	continue
+			#ip = splitted_line[1].strip()
+
+			#pdb.set_trace()
+			ips_to_check.append(ip)
+		ips_to_check = set(ips_to_check)
+
 		ips = []
 		f1=open(file_name, 'w+')
 		print >>f1, "Intersection Report"
-		print >>f1, "\nIncidents:"
-		for id_incident in id_incidents:
-			incident = self.bothound_tools.get_incident(id_incident)[0]
-			ips = ips + es_handler.get_banjax(incident['start'], incident['stop'], incident['target']).keys()
-			print >>f1, "Incident {}, target domain = {}, Start:{}, Stop:{}".format(
-				id_incident, incident['target'], incident['start'], incident['stop'])
-
-		ips = set(ips)
-		print >>f1, "\nNotal number of incident IPs:", len(ips)
-
 		print >>f1, "\nFinding intersection with data from file : {}".format(input_file_name)
 		print >>f1, "\nNotal number of file IPs:", len(ips_to_check)
 
-
-		ips_to_check = set(ips_to_check)
-		intersection = len(ips.intersection(ips_to_check))
-		percentage1 = intersection * 100.0 / len(ips)
-		percentage2 = intersection * 100.0 / len(ips_to_check)
-
-		print >> f1, "_______________"
-		print >> f1, "Intersection:"
-		print >> f1, "Total number of identical IPs:{}".format(intersection)
-		print >> f1, "Percentage of incidents IPs:{:.2f}%".format(percentage1)
-		print >> f1, "Percentage of file's IPs:{:.2f}%".format(percentage2)
-
-		print "_______________"
-		print "Intersection:"
-		print "Total number of identical IPs:{}".format(intersection)
-		print "Percentage of incidents IPs:{:.2f}%".format(percentage1)
-		print "Percentage of file's IPs:{:.2f}%".format(percentage2)
+		attacks = self.bothound_tools.get_attack_ids(id_incidents)
+		for attack in attacks:
+			print >>f1, "\n__________ Botnet {}:".format(attack)
+			ips = self.bothound_tools.get_attack_ips_decrypted(id_incidents, attack)
+			#pdb.set_trace()
+			ips = set(ips)
+			print >>f1, "Total IPs:", len(ips)
+			intersection = len(ips.intersection(ips_to_check))
+			percentage1 = intersection * 100.0 / len(ips)
+			percentage2 = intersection * 100.0 / len(ips_to_check)
+			print >> f1, "# identical IPs: {}".format(intersection)
+			print >> f1, "% of botnet IPs: {:.2f}%".format(percentage1)
+			print >> f1, "% of file's IPs: {:.2f}%".format(percentage2)
 
 		f1.close()
-		   
 
 if __name__ == "__main__":
 
@@ -485,20 +483,32 @@ if __name__ == "__main__":
 	
 	#id_incidents = [24,25,26,19,27]
 	#id_incidents = [29,30,31,32,33,34]
-	#id_incidents = [29,30,31,32,33,34] #,36,37,39, 40]
+	id_incidents = [29,30,31,32,33,34,42]
 
 	#id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []
-	bothound_tools.calculate_distances(id_incident = 31, id_attack = 5, cluster_indexes1 = [], cluster_indexes2 = [], 
-		id_incidents = [29,30,31,32,33,34,36,37,39,40,42], features = [])
+
+	#bothound_tools.calculate_distances(id_incident = 31, id_attack = 5, cluster_indexes1 = [], cluster_indexes2 = [], 
+	#	id_incidents = [29,30,31,32,33,34,36,37,39,40,42], features = [])
+
+	#analytics.calculate_incident_intersection([29,30,31,32,33,34], 1, [36,37,39,40])
 
 	#bothound_tools.incidents_summary(id_incidents)
+
+	#attacks = bothound_tools.get_attacks(id_incidents) # show attack count
+	#for a in attacks:
+	#	print a
+
+	#bothound_tools.extract_attack_ips(id_incidents)
+
+	#analytics.calculate_intersection_with_file(id_incidents, 
+	#	"./botnet_xmlrpc_20160414.csv", "intersection_botnet_xmlrpc_20160414.txt")
 	
 	#for i in range(1, 9):
 	#    bothound_tools.extract_attack_ips(id_incidents, i)
 
 	#analytics.calculate_cross_table(id_incidents)
 
-	#analytics.calculate_incident_intersection([40], [35,36,37])
+	analytics.calculate_incident_intersection(id_incidents, attack = -1, incidents2 = [36,37,39,40])
 
 	#analytics.calculate_incident_intersection_plus_ua([29,30,31,32,33,34], [35,36,37])
 	
@@ -549,5 +559,25 @@ if __name__ == "__main__":
 	"""
 
 
-	
+	"""
+	sql for counting botnets
+
+		select distinctrow attack from sessions
+		where (id_incident = 29 or id_incident = 30 or  id_incident = 31 or id_incident = 32 or id_incident = 33 or id_incident = 34)
+
+	select count(distinctrow IP) from sessions
+	where (id_incident = 29 or id_incident = 30 or  id_incident = 31 or id_incident = 32 or
+	id_incident = 33 or id_incident = 34 or id_incident = 42)
+	and attack = 2
+
+
+	select distinctrow id_incident from sessions
+	where (id_incident = 29 or id_incident = 30 or  id_incident = 31 or id_incident = 32 or id_incident = 33 or id_incident = 34)
+	and attack = 1
+
+	UPDATE sessions
+	SET attack=7
+	WHERE id_incident = 34 and attack = 1
+
+	"""	
 
