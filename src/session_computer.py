@@ -83,16 +83,23 @@ class SessionExtractor():
 		if(incident is None):
 			return 
 
-		# get the logs from ES
-		banned_ips = self.es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
-
-		# get the logs from ES
-		ats_records = self.es_handler.get(incident['start'], incident['stop'], incident['target'])
-
-		# calculate IP dictionary with ATS records
 		ip_sieve = IPSieve()
-		ip_records = ip_sieve.process_ats_records(ats_records)
+		ip_records = {}		
+		banned_ips = []
 
+		if(incident["file_name"] is None) or (len(incident["file_name"]) == 0):
+			# get the logs from ES
+			# get the logs from ES
+			banned_ips = self.es_handler.get_banjax(incident['start'], incident['stop'], incident['target'])
+			ats_records = self.es_handler.get(incident['start'], incident['stop'], incident['target'])
+
+			# calculate IP dictionary with ATS records
+			ip_records = ip_sieve.process_ats_records(ats_records)
+		else:
+			# read the sessions from the log file
+			ip_sieve.add_log_file(incident["file_name"])
+			ip_records = ip_sieve.parse_log("nginx")
+	
 		# calculate features
 		ip_feature_db = {}
 

@@ -10,6 +10,7 @@ AUTHORS:
 """
 
 from util.apache_log_muncher import parse_line as parse_apache_line
+from util.nginx_log_muncher import parse_line as parse_nginx_line
 from util.ats_record import ATSRecord
 import util.es_log_muncher 
 import pdb
@@ -58,12 +59,13 @@ class IPSieve():
         self.dict_invalid = False
         self._ordered_records = pre_seived_records
 
-    def parse_log(self):
+    def parse_log(self, parser = "apache"):
         """
         Read each line of the log file and batch the records corresponding
         to each client (ip) make a dictionary of lists each consisting of all
          records
         """
+        parser_function = parse_apache_line if parser == "apache" else parse_nginx_line
         #to check the performance and the sensitivity of the log mancher
         total_failure_munches = 0
         for log_filename in self._log_file_list:
@@ -84,7 +86,7 @@ class IPSieve():
             ip_session_tracker = {}
             for cur_rec in self._log_lines:
                 new_session = False
-                cur_rec_dict = parse_apache_line(cur_rec)
+                cur_rec_dict = parser_function(cur_rec)
 
                 if cur_rec_dict:
                     cur_ip = cur_rec_dict["host"];
@@ -131,6 +133,7 @@ class IPSieve():
         if total_failure_munches > 0:
             print "Failed to parse ", total_failure_munches, " records"
         self.dict_invalid = False
+        return self._ordered_records
 
     def parse_log_old(self):
         """

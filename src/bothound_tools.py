@@ -56,6 +56,7 @@ class BothoundTools():
         "process BOOL,"
         "target LONGTEXT,"
         "cluster_index INT,"
+        "file_name LONGTEXT, "
         "PRIMARY KEY(id)) "
         "ENGINE=INNODB;")
 
