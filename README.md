@@ -15,7 +15,7 @@ The following libraries should be installed:
 * [sudo] pip install -U scikit-learn 
 * [sudo] apt-get install git
   
-## Install Jupyter
+## Jupyter
 * first make sure that you install jupyter locally because nbextension has a bug and only is able to install if there is a local installation.  
 sudo pip install jupyter --user
 
@@ -43,15 +43,59 @@ You need to create a configuration file bothound.yaml
 
 1. Make a copy of conf/rename_me_to_bothound.yaml  
 2. Rename the copy to bothound.yaml  
-3. Update the file with your credentials  
- 
-# Basic Usage
+3. Update the file with your credentials 
 
-## Creating incidents
-Incidents might be created 
+# Initialization
 
-* Manually using Adminer  
-* Automatically using bothound. Bothound creates incindets based on messages from GreyMemory anomaly detector.
+## Creating database
+To create a database, you need to any script which instantiate bothound_tools object, for example:  
+
+* cd src  
+* python session_computer.py  
+
+Make sure the database and the tables are created successfully.
+
+## Running Jupyter
+1. Make sure Jupyter instance is running on the bothound server. 
+To run the instance, use:  
+jupyter notebook --no-browser --port=8889
+2. Establish a tunnel to Jupyter instance from your local computer:  
+ssh -N -L 8889:127.0.0.1:8889 anton@bothound.deflect.ca
+3. Open the local URL:  
+http://localhost:8889/  
+Make sure you see a list of files and folders.
+
+
+## Incidents 
+Incidents are created manually using Adminer interface. In the future incidents will be created automaically based on messages from GreyMemory anomaly detector.
+
+### Creating incidents 
+* Insert a new record into into "incidents" table. 
+* Make sure you filled at least "start", "stop", "target" fields.
+* The target URL should not contain "www." at the beginning. If you have multiply targets, you can add them sepatated by comma.
+* Set "process" field to 1.
+
+### Creating incidents from nginx logs
+* Insert a new record into into "incidents" table. 
+* Make sure you filled "file_name" with the full path to a nginx log file.
+* Set "process" field to 1.
+
+## Sessions
+### Session Computer
+Session Computer calculates sessions for all the records in incidents table containing 1 in the "Process" field.
+
+* Run session computer with "python session_computer.py". 
+* Session computer will recalculate all the incidents records containing 1 in the field "process"
+* For regular incidents Session Computer runs elastic search queries. For nginx incidents Session Computer will parse the corresponding log file.
+* The sessions will be stored in "sessions" table
+
+### IP Encryption
+For security reasons Bothound stores only encrypted IPs in the session table (fields "ip_encrypted", "ip_iv","ip_tag"). 
+The hash of the IP is also stored in the field "ip".
+The encryption key is set in the configuration file "conf/bothound.yaml"("encryption_passphrase").
+Bothound suports multiply encryption keys. "Encryption" table contains the hash value of the key which was used to encrypt IPs of an incident. 
+
+In order to get the decrypted IPs of the incident use extract_attack_ips() function in bothound_tools.py 
 
 ## Running Bothound
 
