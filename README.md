@@ -65,7 +65,6 @@ ssh -N -L 8889:127.0.0.1:8889 anton@bothound.deflect.ca
 http://localhost:8889/  
 Make sure you see a list of files and folders.
 
-
 ## Incidents 
 Incidents are created manually using Adminer interface. In the future incidents will be created automaically based on messages from GreyMemory anomaly detector.
 
@@ -97,25 +96,29 @@ Bothound suports multiply encryption keys. "Encryption" table contains the hash 
 
 In order to get the decrypted IPs of the incident use extract_attack_ips() function in bothound_tools.py 
 
-## Running Bothound
+## Attacks
+Bothound uses clustering methods in order to separate attackers from regular traffic.
+This process of labeling a subset of incident sessions as an attack is manual. 
+The user opens a Jyputer notebook, chooses an incident, clusters the sessions with different clustering algorithms and manually assigns an arbitrary attack number to the selected clusters. 
 
-* To run bothound:  
-cd src
-python bothound.py
+### Jupyter notebooks
+The [Jupyter Notebook](http://jupyter.org/) is a web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. 
+Notebook contains a list of cells(markdown, python code, graphs). 
+Use Shift+Enter to execute a cell.
+You can fold/unfold the contect of a cell using an "arrow" character on the left.
 
-## Getting data from Elastic Search and calculating features
-1. Set "processed" column to 1 for the incidents you are willing to update.
-2. Run python session_computer.py
+### Labeling attackers
+1. Open Jupyter interface URL: http://localhost:8889/ 
+2. Open src/Clustering.ipynb  
+3. Execute Initialization chapter
+4. Configuration chapter: change the assignment of variable "id_incident" to your incident number
+5. Execute Configuration chapter
 
-## Clustering 
-To run Jupyter
 
-1. Run Jupyter on server from the folder with the ipynb:    
-jupyter notebook --no-browser --port=8889  
-2. Run SSH tunnel on your local machine    
-ssh -N -L 8889:127.0.0.1:8889 user@server -p 2223  
-3. Open http://127.0.0.1:8889  
-4. Open src/Clustering.ipynb  
+
+
+
+
 
 Using thes Ipython notebook you can:
 
@@ -129,8 +132,3 @@ Using thes Ipython notebook you can:
 * display 3D scatter plot using selected clusters from different incidents  
 * store the clustering as well as the selected cluster in the database  
 
-## Classification of incidents
-Not implemented yet.
-
-## Botnet profiling
-Not implemented yet.
