@@ -89,10 +89,10 @@ Session Computer calculates sessions for all the records in incidents table cont
 * The sessions will be stored in "sessions" table
 
 ### IP Encryption
-For security reasons Bothound stores only encrypted IPs in the session table (fields "ip_encrypted", "ip_iv","ip_tag"). 
+For security reasons Bothound stores only encrypted IPs in the session table in "ip\_encrypted", "ip\_iv","ip\_tag" fields. 
 The hash of the IP is also stored in the field "ip".
-The encryption key is set in the configuration file "conf/bothound.yaml"("encryption_passphrase").
-Bothound suports multiply encryption keys. "Encryption" table contains the hash value of the key which was used to encrypt IPs of an incident. 
+The encryption key is set in the configuration file "conf/bothound.yaml" ("encryption\_passphrase").
+Bothound suports multiply encryption keys. Encryption table contains the hash value of the key which was used to encrypt IPs of an incident. 
 
 In order to get the decrypted IPs of the incident use extract_attack_ips() function in bothound_tools.py 
 
@@ -107,28 +107,29 @@ Notebook contains a list of cells(markdown, python code, graphs).
 Use Shift+Enter to execute a cell.
 You can fold/unfold the contect of a cell using an "arrow" character on the left.
 
-### Labeling attackers
-1. Open Jupyter interface URL: http://localhost:8889/ 
-2. Open src/Clustering.ipynb  
-3. Execute Initialization chapter
-4. Configuration chapter: change the assignment of variable "id_incident" to your incident number
-5. Execute Configuration chapter
+### Loading incident
+* Open Jupyter interface URL: http://localhost:8889/  
+* Open src/Clustering.ipynb  
+* Execute Initialization chapter  
+* Configuration chapter: change the assignment of variable "id\_incident = ..." to your incident number  
+* Configuration chapter: uncomment the features you want to use: "features = [...]"  
+* Execute Configuration chapter  
+* Execute Read&Preprocess chapter 
+
+### Clustering
+* Execute DBSCAN Clustering chapter.
+
+* Double clustering.
+
+### Attack saving
+* Execute "Save Clustering" chapter
+* Execute "Save Attack" chapter. If you have more than 1 attack number to save, you should create and execute label\_attack() function for every attack number. For example:
+for attack 1: tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [1], selected\_clusters2 = [])
+for attack 2: tools.label\_attack(id\_incident, attack\_number = 2, selected\_clusters = [1], selected\_clusters2 = [])
+
+### Feature exploration
+
+### Intersection with other incidents
 
 
-
-
-
-
-
-Using thes Ipython notebook you can:
-
-* load an incident from incidents table  
-* reduce the number of features using PCA algorithm  
-* perform clustering and automatically choose the optimum number of clusterd for K-means algorithm  
-* perform clustering using SCAN algorithm  
-* visually display clusters in 3D scatter plots  
-* validate clusters using IP intersection with different incidents 
-* display geo location properties of clusters 
-* display 3D scatter plot using selected clusters from different incidents  
-* store the clustering as well as the selected cluster in the database  
 
