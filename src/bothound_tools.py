@@ -57,6 +57,7 @@ class BothoundTools():
         "target LONGTEXT,"
         "cluster_index INT,"
         "file_name LONGTEXT, "
+        "id_encryption INT,"
         "PRIMARY KEY(id)) "
         "ENGINE=INNODB;")
 
@@ -145,6 +146,12 @@ class BothoundTools():
         "FOREIGN KEY (id_session) REFERENCES sessions(id) ON DELETE CASCADE,"
         "FOREIGN KEY (id_user_agent) REFERENCES user_agents(id) ON DELETE CASCADE"
         ") ENGINE=INNODB;")
+
+        # ENCRYPTION table
+        self.cur.execute("create table IF NOT EXISTS encryption (id INT NOT NULL AUTO_INCREMENT, "
+        "key_hash LONGTEXT, "
+        "comment LONGTEXT, "
+        "PRIMARY KEY(id)) ENGINE=INNODB;")
 
 
     def get_deflectees(self):
@@ -283,35 +290,52 @@ class BothoundTools():
                 self.cur.execute(insert_sql, values)
                 id_session = self.cur.lastrowid
                 for key, value in features[ua_feature.get_feature_index()].iteritems():
-                    insert_sql = "INSERT INTO user_agents ("\
-                    "id, ua, device_family,os_family,os_major,os_minor,os_patch,os_patch_minor,ua_family,ua_major,ua_minor,ua_patch"\
-                    ") VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE id=id"
-                    self.cur.execute(insert_sql,[
-                        0,key,
-                        value["device_family"],
-                        value["os_family"],
-                        value["os_major"],
-                        value["os_minor"],   
-                        value["os_patch"],
-                        value["os_patch_minor"],
-                        value["ua_family"],
-                        value["ua_major"],
-                        value["ua_minor"],
-                        value["ua_patch"]]
-                        )
                     self.cur.execute("select id from user_agents where ua =%s",[key])
-                    id_user_agent = self.cur.fetchall()[0]['id']
+                    ids = self.cur.fetchall()
+                    if(len(ids) == 0):
+                        insert_sql = "INSERT INTO user_agents ("\
+                        "id, ua, device_family,os_family,os_major,os_minor,os_patch,os_patch_minor,ua_family,ua_major,ua_minor,ua_patch"\
+                        ") VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                        self.cur.execute(insert_sql,[
+                            0,key,
+                            value["device_family"],
+                            value["os_family"],
+                            value["os_major"],
+                            value["os_minor"],   
+                            value["os_patch"],
+                            value["os_patch_minor"],
+                            value["ua_family"],
+                            value["ua_major"],
+                            value["ua_minor"],
+                            value["ua_patch"]]
+                            )
+                        id_user_agent = self.cur.lastrowid
+                    else:
+                        id_user_agent = ids[0]['id']
+
                     insert_sql = "INSERT INTO session_user_agent ("\
                     "id, id_session, id_user_agent, count"\
                     ") VALUES(%s, %s,%s,%s)"
+
                     self.cur.execute(insert_sql,[0,id_session, id_user_agent, value["count"]])
 
             except Exception,e:
                 g = 0
                 pdb.set_trace()
 
+        # update encryption key for this incident
+        key_hash = hashlib.sha256(self.db_encryption_key).digest()
+        self.cur.execute("select id from encryption where key_hash = %s", key_hash) 
+        ids = self.cur.fetchall()
+        id_key = 1
+        pdb.set_trace()
+        if(len(ids)) > 0: 
+            id_key = ids[0]
+        else:
+            self.cur.execute("insert INTO encryption (id, key_hash) VALUES(%s,%s)", 0, key_hash) 
+            id_key = self.cur.lastrowid
+        self.cur.execute("update incidents set id_encryption=%s WHERE id = %s",id_key,id_incident)
 
-               
         self.db.commit()
 
     def get_sessions(self, id_incident):
@@ -351,10 +375,10 @@ class BothoundTools():
         return [elem["IP"] for elem in self.cur.fetchall()]
 
 
-    def get_ips(self, id_incident, cluster_index = -1):
+    def get_ips(self, id_incident, attack = -1):
         if cluster_index >= 0 :
             self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {} "
-                "and cluster_index = {}".format(id_incident, cluster_index))
+                "and attack = {}".format(id_incident, attack))
         else:
             self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {0}".format(id_incident))
 
@@ -839,6 +863,23 @@ class BothoundTools():
 
         res = sorted(res, key=lambda k: k["id"], reverse=False) 
         return res
+
+    def calculate_attack_metrics(self, id_incidents):
+        attacks = self.get_attack_ids(id_incidents)
+        for attack in attacks:
+            print "\n__________ Botnet {}:".format(attack)
+            self.cur.execute("select AVG(session_length) as v from sessions where attack = %s", attack)
+            print "Session length =", self.cur.fetchall()[0]['v'], "sec"
+
+            self.cur.execute("select AVG(html2image_ratio) as v from sessions where attack = %s", attack)
+            print "Html/image ratio =", self.cur.fetchall()[0]['v']
+
+            self.cur.execute("select AVG(payload_average) as v from sessions where attack = %s", attack)
+            print "Payload average =", self.cur.fetchall()[0]['v']
+
+            self.cur.execute("select AVG(request_interval) as v from sessions where attack = %s", attack)
+            v = self.cur.fetchall()[0]['v']
+            print "Hit rate =", 60.0/v if v > 0 else 100, "/minute"
     
     def __init__(self, conf):
         #we would like people to able to use the tool object even

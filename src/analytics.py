@@ -470,6 +470,8 @@ class Analytics():
 
 		f1.close()
 
+
+
 if __name__ == "__main__":
 
 	stram = open("../conf/bothound.yaml", "r")
@@ -483,7 +485,9 @@ if __name__ == "__main__":
 	
 	#id_incidents = [24,25,26,19,27]
 	#id_incidents = [29,30,31,32,33,34]
-	id_incidents = [29,30,31,32,33,34,42]
+	id_incidents = [29,30,31,32,33,34]
+
+	bothound_tools.calculate_attack_metrics(id_incidents)
 
 	#id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []
 
@@ -508,7 +512,7 @@ if __name__ == "__main__":
 
 	#analytics.calculate_cross_table(id_incidents)
 
-	analytics.calculate_incident_intersection(id_incidents, attack = -1, incidents2 = [36,37,39,40])
+	#analytics.calculate_incident_intersection(id_incidents, attack = -1, incidents2 = [36,37,39,40])
 
 	#analytics.calculate_incident_intersection_plus_ua([29,30,31,32,33,34], [35,36,37])
 	
@@ -578,6 +582,11 @@ if __name__ == "__main__":
 	UPDATE sessions
 	SET attack=7
 	WHERE id_incident = 34 and attack = 1
+
+	select ua from session_user_agent, sessions, user_agents
+	where sessions.id_incident = 41 and session_user_agent.id_session = sessions.id
+	and user_agents.id = id_user_agent
+	limit 10
 
 	"""	
 

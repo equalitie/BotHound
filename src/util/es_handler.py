@@ -191,7 +191,7 @@ class ESHandler:
             print "total # of hits : ", total_size
             num_processed = 0
             while (scroll_size > 0):
-                print "Scrolling...", page_index
+                #print "Scrolling...", page_index
                 # Do something with the obtained page
                 json_result = page['hits']['hits']
 
