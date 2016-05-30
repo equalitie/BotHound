@@ -1,8 +1,13 @@
 BotHound
 =======
 
-Automatic attack detector and botnet classifier
+Automatic DDOS attack detector and botnet classifier
 -----------
+
+# Descritpion
+Bothound is an automatic attack detector and botnet classifier. Its purpose is to create a historical classification of the attacks with detailed information regarding the attackers (country-based, time-based, etc.).
+
+Bothound's role is to detect and classify the attacks (incidents), using the anomaly-detection and machine-learning tool Grey Memory. BotHound attack classifier is reacting to anomalous detector and start gathering live information from Deflect network. It computes a behaviour vector for all visitors of the network when Greymemory detect an anomaly. BotHound group the client IPs in different groups (cluster) using unsupervised ML algorithms in order to profile the group of malicious visitors. It uses different measures to tag the groups which are more likely to be attackers. After that it feed all the behavoir vectors of bot ips into a classifier to detect if the botnet has a history of attacking deflect network in the past. It generate a report based on the conclusion to Sysops and gets feedback to improve its classification performance.
 
 # Installation
 
@@ -65,22 +70,29 @@ ssh -N -L 8889:127.0.0.1:8889 anton@bothound.deflect.ca
 http://localhost:8889/  
 Make sure you see a list of files and folders.
 
-## Incidents 
+# Definitions
+* Session - a IP and a vector of features values recorded and calculated during a period of the IP’s activity  
+* Feature - an individual measurable property of a session   
+* Incident - a set of sessions recorded during a time interval  
+* Attack - a subset of sessions in an incident which was labeled as an attack  
+* Botnet - a list of IPs participated in similar attacks   
+
+# Incidents 
 Incidents are created manually using Adminer interface. In the future incidents will be created automaically based on messages from GreyMemory anomaly detector.
 
-### Creating incidents 
+## Creating incidents 
 * Insert a new record into into "incidents" table. 
 * Make sure you filled at least "start", "stop", "target" fields.
 * The target URL should not contain "www." at the beginning. If you have multiply targets, you can add them sepatated by comma.
 * Set "process" field to 1.
 
-### Creating incidents from nginx logs
+## Creating incidents from nginx logs
 * Insert a new record into into "incidents" table. 
 * Make sure you filled "file_name" with the full path to a nginx log file.
 * Set "process" field to 1.
 
-## Sessions
-### Session Computer
+# Sessions
+## Session Computer
 Session Computer calculates sessions for all the records in incidents table containing 1 in the "Process" field.
 
 * Run session computer with "python session_computer.py". 
@@ -88,7 +100,7 @@ Session Computer calculates sessions for all the records in incidents table cont
 * For regular incidents Session Computer runs elastic search queries. For nginx incidents Session Computer will parse the corresponding log file.
 * The sessions will be stored in "sessions" table
 
-### IP Encryption
+## IP Encryption
 For security reasons Bothound stores only encrypted IPs in the session table in "ip\_encrypted", "ip\_iv","ip\_tag" fields. 
 The hash of the IP is also stored in the field "ip".
 The encryption key is set in the configuration file "conf/bothound.yaml" ("encryption\_passphrase").
@@ -96,40 +108,70 @@ Bothound suports multiply encryption keys. Encryption table contains the hash va
 
 In order to get the decrypted IPs of the incident use extract_attack_ips() function in bothound_tools.py 
 
-## Attacks
+# Attacks
 Bothound uses clustering methods in order to separate attackers from regular traffic.
 This process of labeling a subset of incident sessions as an attack is manual. 
 The user opens a Jyputer notebook, chooses an incident, clusters the sessions with different clustering algorithms and manually assigns an arbitrary attack number to the selected clusters. 
 
-### Jupyter notebooks
+## Jupyter notebooks
 The [Jupyter Notebook](http://jupyter.org/) is a web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. 
 Notebook contains a list of cells(markdown, python code, graphs). 
 Use Shift+Enter to execute a cell.
 You can fold/unfold the contect of a cell using an "arrow" character on the left.
 
-### Loading incident
+## Loading incident
 * Open Jupyter interface URL: http://localhost:8889/  
 * Open src/Clustering.ipynb  
 * Execute Initialization chapter  
 * Configuration chapter: change the assignment of variable "id\_incident = ..." to your incident number  
 * Configuration chapter: uncomment the features you want to use: "features = [...]"  
 * Execute Configuration chapter  
-* Execute Read&Preprocess chapter 
+* Execute "Load Data"chapter 
 
-### Clustering
-* Execute DBSCAN Clustering chapter.
+## Clustering
+* Execute DBSCAN Clustering chapter. 
+After the clustering is done, you will see a bar plot of clusters. 
+Y-axes coresponds to the size the cluster. Every cluster has it's own color from a predefined palette.
+
+* Use plot3() function in the second cell of the chapter to create different 3D scatter plots of the calculated clusters:  
+plot3([0,1,3], X, clusters, [])  
+The first argument of this function is the indexes of the 3 features displayed at the scatter plot. Note, that these are the indexes in the array of uncommented features from "Configuration" chapter. If you have more than 3 uncommented features, choose different indexes and re-execute plot3() cell.
+
+* Choose your features carefully. 
+It's always better to experiment and play with different features subsets (uncommented in "Configuration" chapter). Clustering is very sensitive to feature selection. 
+Different attacks might have different distinguishable features. 
+If you change your features selection in "Configuration" chapter you must re-execute "Congiguration", "Load Data", "Clustering" chapters. 
 
 * Double clustering.
 
-### Attack saving
+## Attack saving
 * Execute "Save Clustering" chapter
-* Execute "Save Attack" chapter. If you have more than 1 attack number to save, you should create and execute label\_attack() function for every attack number. For example:
-for attack 1: tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [1], selected\_clusters2 = [])
-for attack 2: tools.label\_attack(id\_incident, attack\_number = 2, selected\_clusters = [1], selected\_clusters2 = [])
+* Execute "Save Attack" chapter. If you have more than 1 attack number to save, you should create and execute label\_attack() function for every attack number.   
+For example:   
+for attack 1:   
+tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [1], selected\_clusters2 = [])  
+for attack 2:   
+tools.label\_attack(id\_incident, attack\_number = 2, selected\_clusters = [1], selected\_clusters2 = [])  
 
-### Feature exploration
+## Feature exploration
+In this section user can explore the distribution of a single feature over the clusters to verify the quality of the clustering results.   
+box\_plot\_feature(clusters, num_clusters = 4, X = X, feature\_index = 2)  
+The function will display a boxplot of feature values distribution per cluster.
+Using this graph you can get more understanding about the quality of the clustering you used.  
+For instance, if you know in advance that the attack you are clustering should have a significant higher hit rate, then you can expect that a proper attack cluster should have a similar high boxplot of "request\_interval" feature.
 
-### Intersection with other incidents
+## Common IPs with other incidents
+If two attacks share a significant portion of identical IPs, they are likely to belong to the same botnet.  
+plot\_intersection(clusters, num\_clusters, id\_incident, ips, id\_incident2 = ..., attack2 = -1)  
+This function will create a bar plot highliting portions of the clusters which share identical IPs with another incident(specified by variable id_incident2). It's also possible to specify a particular attack index.
+
+## Countries
+This graph explores the country distribution over the clusters. 
+
+## Banjax
+Even if an IP was banned during the incident, Bothound does not use this information for clustering.
+Nevertherless, the distribution of banned IPs over the clusters might be usufull.
+This graph will display portions of IPs, banned by Banjax per cluster.
 
 
 
