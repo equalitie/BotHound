@@ -218,4 +218,4 @@ This graph explores the country distribution over the clusters.
 ## Banjax
 Even if an IP was banned during the incident, Bothound does not use this information for clustering.
 Nevertheless, the distribution of banned IPs over the clusters might be useful.
-This graph will display portions of IPs, banned by Banjax per cluster.
+This graph will display portions of IPs, banned by [Banjax](https://github.com/equalitie/banjax) per cluster.
