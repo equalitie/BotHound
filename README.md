@@ -112,6 +112,12 @@ Incidents are created manually using the Adminer interface. In the future, incid
 * Make sure you filled "file_name" with the full path to a nginx log file.
 * Set "process" field to 1.
 
+## Jupyter Notebook
+The [Jupyter Notebook](http://jupyter.org/) is a web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. 
+Notebook contains a list of cells (markdown, python code, graphs). 
+Use Shift+Enter to execute a cell.
+You can fold/unfold the content of a cell using the left "arrow" key.
+
 # Sessions
 ## Session Computer
 The Session Computer calculates sessions for all the records in the incidents table containing "1" in the "Process" field.
@@ -137,19 +143,13 @@ Bothound uses clustering methods in order to separate attackers from regular tra
 This process of labelling a subset of incident sessions as an attack is manual. 
 The user opens a Jupyter notebook, chooses an incident, clusters the sessions with different clustering algorithms and manually assigns an arbitrary attack number to the selected clusters. 
 
-## Jupyter Notebook
-The [Jupyter Notebook](http://jupyter.org/) is a web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. 
-Notebook contains a list of cells (markdown, python code, graphs). 
-Use Shift+Enter to execute a cell.
-You can fold/unfold the content of a cell using the left "arrow" key.
-
 ## Loading incident
 * Open Jupyter interface URL: [http://localhost:8889/](http://localhost:8889/)
 * Open src/Clustering.ipynb  
-* Execute Initialization chapter  
-* Configuration chapter: change the assignment of variable "id\_incident = ..." to your incident number  
-* Configuration chapter: uncomment the features you want to use: "features = [...]"  
-* Execute Configuration chapter  
+* Execute "Initialization" chapter  
+* "Configuration" chapter: change the assignment of variable "id\_incident = ..." to your incident number  
+* "Configuration" chapter: uncomment the features you want to use: "features = [...]"  
+* Execute "Configuration" chapter  
 * Execute "Load Data"chapter 
 
 ## Clustering
@@ -191,15 +191,18 @@ tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [3], 
 ```
 If you use double clustering, don't forget to specify the indexes for selected_clusters2.
 For example, for attack #1 you will choose cluster #3 and double clusters #4 and #5:   
-
+```python
 tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [3], selected\_clusters2 = [4,5])  
+```
 
 * Execute "Save Attack" chapter. 
 
 ## Feature exploration
 In this section, users can explore the distribution of a single feature over the clusters to verify the quality of the clustering results.  
 
+```python
 box\_plot\_feature(clusters, num_clusters = 4, X = X, feature\_index = 2)  
+```
 
 The function will display a boxplot of feature values distribution per cluster.
 Using this graph, you can get more insight into the quality of the clustering you used.  
@@ -208,7 +211,9 @@ For instance, if you know in advance that the attack you are clustering should h
 ## Common IPs with other incidents
 If two attacks share a significant portion of identical IPs, they are likely to belong to the same botnet.
 
+```python
 plot\_intersection(clusters, num\_clusters, id\_incident, ips, id\_incident2 = ..., attack2 = -1)  
+```
 
 This function will create a bar plot highlighting portions of the clusters which share identical IPs with another incident (specified by variable id_incident2). It's also possible to specify a particular attack index.
 
@@ -219,3 +224,124 @@ This graph explores the country distribution over the clusters.
 Even if an IP was banned during the incident, Bothound does not use this information for clustering.
 Nevertheless, the distribution of banned IPs over the clusters might be useful.
 This graph will display portions of IPs, banned by [Banjax](https://github.com/equalitie/banjax) per cluster.
+
+# Analytics
+When attack labeling is completed(see "Attacks" chapter), a set of analytic scripts may be executed from a separate Jupyter notebook:
+
+* Open Jupyter interface URL: [http://localhost:8889/](http://localhost:8889/)
+* Open src/Analytics_1.ipynb 
+* Execute "Initialization" chapter  
+* "Configuration" chapter: type the incident ids to explore  
+* Execute "Read Data" chapter   
+
+## Attacks Summary
+In this section you can get the general information about the attacks in the selected incidents:  
+* number of unique IPs  
+* ids of labeled attacks  
+* number of bots in each attack  
+```python
+Incident 29, num IPs = 14790, num Bots = 13013  
+Incident 42, num IPs = 10963, num Bots = 9023  
+Attack 1 = 13857 ips  
+Attack 4 = 2589 ips  
+Attack 7 = 11746 ips  
+```
+
+## Countries by attack
+A barplot of country distribution over the botnets.
+
+## Countries by Incident
+A barplot of country distribution over the incidents.
+
+## User Agents
+The top used User Agent string used by attackers.
+
+## Attacks Scatter Plot
+This 3D scatter plot illustrates the distribution of attack sessions vs the regular traffic.
+The first cell contains the code for preprocessing the plot.
+The first line in this cell defines an array with all the features.  
+```python
+features = [  
+    "request_interval", #1  
+    "ua_change_rate",#2  
+    "html2image_ratio",#3  
+    "variance_request_interval",#4  
+    "payload_average",#5  
+    "error_rate",#6  
+    "request_depth",#7  
+    "request_depth_std",#8  
+    "session_length",#9  
+    "percentage_cons_requests",#10  
+]  
+...  
+```  
+The second cell contains the call to plot3() function(the same function used in "Clustering.ipynb" Jupyter notebook).
+Make sure you corectly specify the first argument: an array of 3 indexes from features array.  
+```python
+plot3([3,2,5], X, incident_indexes, -1, "Attack ")  
+```  
+
+## Attack metrics
+The basic 3 metrics of the attacks:  
+
+* session length   
+* html/image ratio  
+* hit rate  
+
+## Attack similarity
+Attack similarity is a very important measure. It gives you a quantative measure of how close a selected attack to previously processed attacks.  
+```python
+tools.calculate_distances(  
+    id_incident = 29, # incident to explore  
+    id_attack = 1, # attack to explore  
+    id_incidents = [29,30,31,32,33,34,36,37,39,40,42], # incidents to compare with  
+    features = [] # specify the features by name. Use all features if empty  
+)  
+```  
+The output is a list of previous attacks ordered by similarity or distance.  
+
+## Common IPs
+The amount of common IPs with previously recorded attacks is another important metric.
+When a new attack shares a significant portion of IP with another attack, it's a good sign that a single botnet is behind both attacks.  
+
+```python  
+# common ips with other attacks  
+tools.calculate_common_ips(  
+    incidents1 = [29,30], # incidents to explore  
+    id_attack = 1, # attack to explore(use -1 for all attacks)  
+    incidents2 = [36,37,39,40] # incidents to compare with  
+)  
+```  
+
+The output is list of attacks, ordered by the portion of common IPs.  
+* The first number : "identical" - is the total number of common identical IPs
+* The second number : % of attack - is the portion of identical IPs in the target attack
+* The third number : % of incident IPs - is the portion of identical IPs in the incident botnet
+
+```python  
+Intersection with incidents:  
+[36, 37, 39, 40]  
+
+========================== Attack 1:  
+Num IPs in the attack 13857:  
+
+__________ Incident 36:  
+Num IPs in the incident 111:  
+# identical   IPs: 134  
+% of attack   IPs: 5.00%   
+% of incident IPs: 77.00%  
+
+__________ Incident 37:  
+Num IPs in the incident 2720:  
+# identical   IPs: 4567  
+% of attack   IPs: 12.00%  
+% of incident IPs: 7.00%  
+```
+
+
+
+
+
+
+
+
