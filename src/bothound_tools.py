@@ -328,7 +328,7 @@ class BothoundTools():
         self.cur.execute("select id from encryption where key_hash = %s", key_hash) 
         ids = self.cur.fetchall()
         id_key = 1
-        pdb.set_trace()
+        #pdb.set_trace()
         if(len(ids)) > 0: 
             id_key = ids[0]
         else:
@@ -380,7 +380,7 @@ class BothoundTools():
             self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {} "
                 "and attack = {}".format(id_incident, attack))
         else:
-            self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {0}".format(id_incident))
+            self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {0} and attack > 0".format(id_incident))
 
         return [elem["IP"] for elem in self.cur.fetchall()]
 
@@ -688,9 +688,11 @@ class BothoundTools():
             sql += " and attack = {}".format(id_attack) + " group by IP_ENCRYPTED"
         else:
             sql += " and attack > 0 " + " group by IP_ENCRYPTED"
-        self.cur.execute(sql)
 
-        return [self.decrypt(elem['IP_ENCRYPTED'], elem['IP_IV'],  elem['IP_TAG']) for elem in self.cur.fetchall()]
+        self.cur.execute(sql)
+        ips = [self.decrypt(elem['IP_ENCRYPTED'], elem['IP_IV'],  elem['IP_TAG']) for elem in self.cur.fetchall()]
+        ips = set(ips)
+        return ips
 
     def extract_attack_ips(self, id_incidents) :
         """
@@ -707,12 +709,44 @@ class BothoundTools():
                 continue
             ips = self.get_attack_ips_decrypted(id_incidents, attack)
             f1=open("ips_botnet_{}.txt".format(attack), 'w+')
+
             for ip in ips:
                 print >> f1, ip
 
             f1.close()
 
-    def calculate_distances(self, id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []):
+    
+    def calculate_common_ips(self, incidents1, id_attack,  incidents2):
+
+        print "Intersection with incidents:"
+        print incidents2
+        attacks  = []
+        if(id_attack > 0):
+            attacks.append(id_attack)
+        else:
+            attacks = self.get_attack_ids(incidents1)
+
+        for a in attacks:
+            print "\n========================== Attack {}:".format(a)
+            ips1 = self.get_attack_ips(incidents1, a)
+            ips1 = set(ips1)
+            print "Num IPs in the attack {}:".format(len(ips1))
+            cross_table = []
+            for i in incidents2:
+               ips2 = set(self.get_attack_ips([i]))
+               #ips2 = set(self.bothound_tools.get_banned_ips([i]))
+               num = len(ips1.intersection(ips2))
+               cross_table.append((i, len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2)) if min(len(ips1), len(ips2)) > 0 else 0))
+
+            sorted_cross_table = sorted(cross_table, key=lambda k: k[4], reverse=True) 
+            for d in sorted_cross_table:
+                print "\n__________ Incident {}:".format(d[0])
+                print "Num IPs in the incident {}:".format(d[2])
+                print "# identical   IPs: {}".format(d[3])
+                print "% of attack   IPs: {:.2f}%".format(100.0*d[3]/d[1])
+                print "% of incident IPs: {:.2f}%".format(100.0*d[3]/d[2])
+
+    def calculate_distances(self, id_incident, id_attack, id_incidents, features = [], cluster_indexes1 = -1, cluster_indexes2 = -1):
 
         if len(features) == 0:
             features = [
@@ -731,8 +765,8 @@ class BothoundTools():
         print "#######################  Distance calculator"
         print "Target indicent = ", id_incident
         print "Target attack = ", id_attack
-        print "Target clustre index  1 = ", cluster_indexes1
-        print "Target clustre index  2 = ", cluster_indexes2
+        print "Target cluster index  1 = ", cluster_indexes1
+        print "Target cluster index  2 = ", cluster_indexes2
         print "Incidents = ", id_incidents
         print "Features = ", features
 
@@ -754,6 +788,9 @@ class BothoundTools():
             X_target.append(row)
         X_target = np.array(X_target)
 
+        if(X_target.shape[0]==0):
+            print "Target attack is empty. Check id_incident and id_attack"
+            return
         incidents = []
 
         #X_for_normalization = X_target
@@ -857,7 +894,9 @@ class BothoundTools():
             attack = {"id" : elem}
             if attack["id"] <= 0 :
                 continue
-            self.cur.execute("select count(distinctrow IP) as count from sessions " + sql_where + " and attack ={}".format(elem))
+            s1 = "select count(distinctrow IP) as count from sessions " + sql_where + " and attack ={}".format(elem)
+            #pdb.set_trace()
+            self.cur.execute(s1)
             attack["count"] = self.cur.fetchall()[0]['count']
             res.append(attack)
 
@@ -881,6 +920,53 @@ class BothoundTools():
             v = self.cur.fetchall()[0]['v']
             print "Hit rate =", 60.0/v if v > 0 else 100, "/minute"
     
+    
+    def get_countries_count(self, id_incidents, attack):
+        sql_where = "where id_incident in ("
+        for id in id_incidents:
+            sql_where = sql_where + "{},".format(id)
+        sql_where = sql_where[:-1]
+        sql_where += ")"
+        
+        if(attack > 0):
+            sql_where += " and attack = {}".format(attack)
+        else:
+            sql_where += " and attack > 0"
+        print sql_where
+            
+
+        self.cur.execute("select distinctrow IP, id_country from sessions " + sql_where)
+        countries = self.cur.fetchall()
+        res_dict = {}
+        for c in countries:
+            id = c["id_country"]
+            if id in res_dict:
+                res_dict[id] += 1
+            else:
+                res_dict[id] = 1
+        res = []
+        for key, value in res_dict.iteritems():
+            temp = [key,value]
+            res.append(temp)
+        
+        res = sorted(res, key=lambda x: x[1], reverse=True) 
+        return res
+
+    def get_top_attack_countries(self, id_incidents, max_countries = 5):
+        countries = self.get_countries()
+        names = {}
+        for c in countries:
+            names[c["id"]] = c["name"]
+    
+        attacks = self.get_attack_ids(id_incidents)
+
+        for attack in attacks:
+            cur_countries = self.get_countries_count(id_incidents, attack)
+            n = max_countries if max_countries < len(cur_countries) else len(cur_countries)
+            print "------ botnet", attack
+            for i in range(0,n):
+                print names[cur_countries[i][0]], cur_countries[i][1]
+
     def __init__(self, conf):
         #we would like people to able to use the tool object even
         #if they don't have a db so we have no reason to load this

@@ -133,35 +133,6 @@ class Analytics():
 			print >> f1, s
 		f1.close()
 
-	def calculate_incident_intersection(self, incidents1, attack,  incidents2):
-
-		print "Intersection with incidents:"
-		print incidents2
-		attacks  = []
-		if(attack > 0):
-			attacks.append(attack)
-		else:
-			attacks = self.bothound_tools.get_attack_ids(incidents1)
-
-		for a in attacks:
-			print "\n========================== Attack {}:".format(a)
-			ips1 = self.bothound_tools.get_attack_ips(incidents1, a)
-			ips1 = set(ips1)
-			print "Num IPs in the attack {}:".format(len(ips1))
-			cross_table = []
-			for i in incidents2:
-			   ips2 = set(self.bothound_tools.get_attack_ips([i]))
-			   #ips2 = set(self.bothound_tools.get_banned_ips([i]))
-			   num = len(ips1.intersection(ips2))
-			   cross_table.append((i, len(ips1), len(ips2), num, num * 100.0 / min(len(ips1), len(ips2)) if min(len(ips1), len(ips2)) > 0 else 0))
-
-			sorted_cross_table = sorted(cross_table, key=lambda k: k[4], reverse=True) 
-			for d in sorted_cross_table:
-				print "\n__________ Incident {}:".format(d[0])
- 				print "Num IPs in the incident {}:".format(d[2])
-				print "# identical   IPs: {}".format(d[3])
-				print "% of attack   IPs: {:.2f}%".format(100.0*d[3]/d[1])
-				print "% of incident IPs: {:.2f}%".format(100.0*d[3]/d[2])
 
 	def calculate_incident_intersection_plus_ua(self, incidents1, incidents2):
 		# Calculating common Banned Ips for two sets of incidents
@@ -462,14 +433,27 @@ class Analytics():
 			ips = set(ips)
 			print >>f1, "Total IPs:", len(ips)
 			intersection = len(ips.intersection(ips_to_check))
-			percentage1 = intersection * 100.0 / len(ips)
-			percentage2 = intersection * 100.0 / len(ips_to_check)
-			print >> f1, "# identical IPs: {}".format(intersection)
-			print >> f1, "% of botnet IPs: {:.2f}%".format(percentage1)
-			print >> f1, "% of file's IPs: {:.2f}%".format(percentage2)
+			if(intersection > 0):
+				percentage1 = intersection * 100.0 / len(ips)
+				percentage2 = intersection * 100.0 / len(ips_to_check)
+				print >> f1, "# identical IPs: {}".format(intersection)
+				print >> f1, "% of botnet IPs: {:.2f}%".format(percentage1)
+				print >> f1, "% of file's IPs: {:.2f}%".format(percentage2)
 
 		f1.close()
 
+	def get_unique_lines(self, file_name_input, file_name_output):
+		lines = []
+		with open(file_name_input) as f:
+			lines = f.read().splitlines()  
+
+		lines = set(lines)
+
+		f1=open(file_name_output, 'w+')
+		for l in lines:
+			print >> f1, l
+		f1.close()
+		return len(lines)
 
 
 if __name__ == "__main__":
@@ -483,24 +467,34 @@ if __name__ == "__main__":
 
 	analytics = Analytics(bothound_tools)
 	
+	#print analytics.get_unique_lines("botnets/ips_botnet_1.txt", "botnets1/ips_botnet_1.txt")
+	#print analytics.get_unique_lines("botnets/ips_botnet_2.txt", "botnets1/ips_botnet_2.txt")
+	#print analytics.get_unique_lines("botnets/ips_botnet_4.txt", "botnets1/ips_botnet_4.txt")
+	#print analytics.get_unique_lines("botnets/ips_botnet_5.txt", "botnets1/ips_botnet_5.txt")
+	#print analytics.get_unique_lines("botnets/ips_botnet_6.txt", "botnets1/ips_botnet_6.txt")
+	#print analytics.get_unique_lines("botnets/ips_botnet_7.txt", "botnets1/ips_botnet_7.txt")
+
+
 	#id_incidents = [24,25,26,19,27]
 	#id_incidents = [29,30,31,32,33,34]
-	id_incidents = [29,30,31,32,33,34]
+	id_incidents = [29,30,42,31,32,33,34]
 
-	bothound_tools.calculate_attack_metrics(id_incidents)
+	#bothound_tools.calculate_attack_metrics(id_incidents)
 
 	#id_incident, id_attack, cluster_indexes1, cluster_indexes2, id_incidents, features = []
 
-	#bothound_tools.calculate_distances(id_incident = 31, id_attack = 5, cluster_indexes1 = [], cluster_indexes2 = [], 
+	#bothound_tools.calculate_distances(id_incident = 29, id_attack = 1, cluster_indexes1 = [], cluster_indexes2 = [], 
 	#	id_incidents = [29,30,31,32,33,34,36,37,39,40,42], features = [])
 
-	#analytics.calculate_incident_intersection([29,30,31,32,33,34], 1, [36,37,39,40])
+	#bothound_tools.calculate_common_ips([29,30,31,32,33,34], 1, [36,37,39,40])
 
-	#bothound_tools.incidents_summary(id_incidents)
+	bothound_tools.incidents_summary(id_incidents)
 
-	#attacks = bothound_tools.get_attacks(id_incidents) # show attack count
-	#for a in attacks:
-	#	print a
+	attacks = bothound_tools.get_attacks(id_incidents) # show attack count
+	for a in attacks:
+		print a
+
+	#bothound_tools.get_top_attack_countries(id_incidents)
 
 	#bothound_tools.extract_attack_ips(id_incidents)
 
@@ -512,10 +506,6 @@ if __name__ == "__main__":
 
 	#analytics.calculate_cross_table(id_incidents)
 
-	#analytics.calculate_incident_intersection(id_incidents, attack = -1, incidents2 = [36,37,39,40])
-
-	#analytics.calculate_incident_intersection_plus_ua([29,30,31,32,33,34], [35,36,37])
-	
 	#analytics.calculate_unique_ips(id_incidents)
 
 	#urls = analytics.calculate_urls(id_incidents)
@@ -530,7 +520,7 @@ if __name__ == "__main__":
 
 	#analytics.calculate_pingback_domains(id_incidents)
 
-	#analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wordpress_ips.deny", "./btselem/bds_vs_btselem_wordpress_ips.txt")
+	analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wordpress_ips.deny", "./btselem/bds_vs_btselem_wordpress_ips.txt")
 	#analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_stupid.deny", "./btselem/bds_vs_btselem_stupid.txt")
 	#analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wp_20150515-00_ips.deny", "./btselem/bds_vs_btselem_wp_20150515-00_ips.txt")
 
@@ -587,6 +577,9 @@ if __name__ == "__main__":
 	where sessions.id_incident = 41 and session_user_agent.id_session = sessions.id
 	and user_agents.id = id_user_agent
 	limit 10
+
+	select count(distinctrow IP), id_country from sessions
+	where id_incident in (29,30,42,31,32,33,34) and attack =1 and id_country = 11 
 
 	"""	
 
