@@ -187,12 +187,12 @@ It is possible to have more than one attack in a single incident.
 If you have more than 1 attack number to save, you should add a call to the label/attack() function for every attack.  
 For example, for attack #1 you choose cluster #3:  
 ```python 
-tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [3], selected\_clusters2 = [])  
+tools.label_attack(id_incident, attack_number = 1, selected_clusters = [3], selected_clusters2 = [])  
 ```
 If you use double clustering, don't forget to specify the indexes for selected_clusters2.
 For example, for attack #1 you will choose cluster #3 and double clusters #4 and #5:   
 ```python
-tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [3], selected\_clusters2 = [4,5])  
+tools.label_attack(id_incident, attack_number = 1, selected_clusters = [3], selected_clusters2 = [4,5])  
 ```
 
 * Execute "Save Attack" chapter. 
@@ -201,18 +201,18 @@ tools.label\_attack(id\_incident, attack\_number = 1, selected\_clusters = [3], 
 In this section, users can explore the distribution of a single feature over the clusters to verify the quality of the clustering results.  
 
 ```python
-box\_plot\_feature(clusters, num_clusters = 4, X = X, feature\_index = 2)  
+box_plot_feature(clusters, num_clusters = 4, X = X, feature_index = 2)  
 ```
 
 The function will display a boxplot of feature values distribution per cluster.
 Using this graph, you can get more insight into the quality of the clustering you used.  
-For instance, if you know in advance that the attack you are clustering should have a significant higher hit rate, then you can expect that a proper attack cluster should have a similar high boxplot of "request\_interval" features.
+For instance, if you know in advance that the attack you are clustering should have a significant higher hit rate, then you can expect that a proper attack cluster should have a similar high boxplot of "request_interval" features.
 
 ## Common IPs with other incidents
 If two attacks share a significant portion of identical IPs, they are likely to belong to the same botnet.
 
 ```python
-plot\_intersection(clusters, num\_clusters, id\_incident, ips, id\_incident2 = ..., attack2 = -1)  
+plot_intersection(clusters, num_clusters, id_incident, ips, id_incident2 = ..., attack2 = -1)  
 ```
 
 This function will create a bar plot highlighting portions of the clusters which share identical IPs with another incident (specified by variable id_incident2). It's also possible to specify a particular attack index.
