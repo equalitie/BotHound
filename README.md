@@ -226,18 +226,18 @@ Nevertheless, the distribution of banned IPs over the clusters might be useful.
 This graph will display portions of IPs, banned by [Banjax](https://github.com/equalitie/banjax) per cluster.
 
 # Analytics
-When attack labeling is completed(see "Attacks" chapter), a set of analytic scripts may be executed from a separate Jupyter notebook:
+When attack labeling is completed (see "Attacks" chapter), a set of analytic scripts may be executed from a separate Jupyter notebook:
 
 * Open Jupyter interface URL: [http://localhost:8889/](http://localhost:8889/)
 * Open src/Analytics_1.ipynb 
 * Execute "Initialization" chapter  
-* "Configuration" chapter: type the incident ids to explore  
-* Execute "Read Data" chapter   
+* "Configuration" chapter: type the incident IDs to explore  
+* Execute "Read Data" chapter
 
 ## Attacks Summary
 In this section you can get the general information about the attacks in the selected incidents:  
 * number of unique IPs  
-* ids of labeled attacks  
+* IDs of labeled attacks  
 * number of bots in each attack  
 ```python
 Incident 29, num IPs = 14790, num Bots = 13013  
@@ -257,7 +257,7 @@ A barplot of country distribution over the incidents.
 The top used User Agent string used by attackers.
 
 ## Attacks Scatter Plot
-This 3D scatter plot illustrates the distribution of attack sessions vs the regular traffic.
+This 3D scatter plot illustrates the distribution of attack sessions vs. the regular traffic.
 The first cell contains the code for preprocessing the plot.
 The first line in this cell defines an array with all the features.  
 ```python
@@ -275,8 +275,8 @@ features = [
 ]  
 ...  
 ```  
-The second cell contains the call to plot3() function(the same function used in "Clustering.ipynb" Jupyter notebook).
-Make sure you corectly specify the first argument: an array of 3 indexes from features array.  
+The second cell contains the call to plot3() function (the same function used in "Clustering.ipynb" Jupyter notebook).
+Make sure you correctly specify the first argument: an array of 3 indexes from the features array.  
 ```python
 plot3([3,2,5], X, incident_indexes, -1, "Attack ")  
 ```  
@@ -289,7 +289,7 @@ The basic 3 metrics of the attacks:
 * hit rate  
 
 ## Attack similarity
-Attack similarity is a very important measure. It gives you a quantative measure of how close a selected attack to previously processed attacks.  
+Attack similarity is a very important measure. It gives you a quantitative measure of how close a selected attack is to previously processed attacks.  
 ```python
 tools.calculate_distances(  
     id_incident = 29, # incident to explore  
@@ -302,7 +302,7 @@ The output is a list of previous attacks ordered by similarity or distance.
 
 ## Common IPs
 The amount of common IPs with previously recorded attacks is another important metric.
-When a new attack shares a significant portion of IP with another attack, it's a good sign that a single botnet is behind both attacks.  
+When a new attack shares a significant portion of IPs with another attack, it is a plausible sign that a single botnet is behind both attacks.  
 
 ```python  
 # common ips with other attacks  
@@ -313,10 +313,10 @@ tools.calculate_common_ips(
 )  
 ```  
 
-The output is list of attacks, ordered by the portion of common IPs.  
-* The first number : "identical" - is the total number of common identical IPs
-* The second number : % of attack - is the portion of identical IPs in the target attack
-* The third number : % of incident IPs - is the portion of identical IPs in the incident botnet
+The output is a list of attacks, ordered by the portion of common IPs.  
+* The first number - "identical" - is the total number of common identical IPs
+* The second number - % of attack - is the portion of identical IPs in the target attack
+* The third number - % of incident IPs - is the portion of identical IPs in the incident botnet
 
 ```python  
 Intersection with incidents:  
