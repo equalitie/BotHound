@@ -7,7 +7,7 @@ Automatic DDoS attack detector and botnet classifier
 # Description
 Bothound is an automatic DDoS attack detector and botnet classifier. Its purpose is to create a historical classification of the attacks with detailed information regarding the attackers (country-based, time-based, etc.).
 
-Bothound's role is to detect and classify the attacks (incidents), using the anomaly-detection and machine-learning tool [Grey Memory](https://github.com/greymemory). BotHound attack classifier reacts to anomalous detectors and starts gathering live information from the Deflect network. It computes a behaviour vector for all visitors of the network when Grey Memory detects an anomaly. BotHound groups the client IPs in different groups (clusters) using unsupervised machine learning algorithms in order to profile the group of malicious visitors. It uses different measures to tag the groups which are more likely to be attackers. After that, it feeds all the behaviour vectors of bot IPs into a classifier to detect if the botnet has a history of attacking the [Deflect network](https://wiki.deflect.ca/wiki/Main_Page) in the past. It finally generates a report based on its conclusions for Deflect's Sysops and gets feedback to improve its classification performance.
+Bothound's role is to detect and classify the attacks (incidents), using the anomaly-detection and machine-learning tool [Grey Memory](https://github.com/greymemory). BotHound attack classifier reacts to anomalous detectors and starts gathering live information from the Deflect network. It computes a behaviour vector for all visitors of the network when Grey Memory detects an anomaly. BotHound groups the client IPs in different groups (clusters) using unsupervised machine learning algorithms in order to profile the group of malicious visitors. It uses different measures to tag the groups which are more likely to be attackers. After that, it feeds all the behaviour vectors of bot IPs into a classifier to detect if the botnet has a history of attacking the [Deflect network](https://wiki.deflect.ca/wiki/Main_Page) in the past. It finally generates a report based on its conclusions for Deflect's sysops and gets feedback to improve its classification performance.
 
 # Installation
 
@@ -99,7 +99,7 @@ Make sure you see a list of files and folders.
 * Botnet - a list of IPs that participated in similar attacks   
 
 # Incidents 
-Incidents are created manually using the Adminer interface. In the future, incidents will be created automaically based on messages from the Grey Memory anomaly detector.
+Incidents are created manually using the Adminer interface. In the future, incidents will be created automatically based on messages from the Grey Memory anomaly detector.
 
 ## Creating incidents 
 * Insert a new record into the "incidents" table. 
@@ -122,7 +122,7 @@ You can fold/unfold the content of a cell using the left "arrow" key.
 ## Session Computer
 The Session Computer calculates sessions for all the records in the incidents table containing "1" in the "Process" field.
 
-* Run the Session Computer with 
+* Run the Session Computer with: 
 ```
 python session_computer.py
 ```   
@@ -150,12 +150,12 @@ The user opens a Jupyter notebook, chooses an incident, clusters the sessions wi
 * "Configuration" chapter: change the assignment of variable "id\_incident = ..." to your incident number  
 * "Configuration" chapter: uncomment the features you want to use: "features = [...]"  
 * Execute "Configuration" chapter  
-* Execute "Load Data"chapter 
+* Execute "Load Data" chapter 
 
 ## Clustering
 * Execute DBSCAN Clustering chapter. 
 After the clustering is done, you will see a bar plot of clusters. 
-Y-axes corresponds to the size of the cluster. Every cluster has its own color from a predefined palette.
+Y-axis corresponds to the size of the cluster. Every cluster has its own color from a predefined palette.
 
 * Use plot3() function in the second cell of the chapter to create different 3D scatter plots of the calculated clusters:
 
@@ -165,18 +165,18 @@ plot3([0,1,3], X, clusters, [])
 The first argument of this function is an array of indexes of the 3 features to display at the scatter plot. Note that these are the indexes in the array of uncommented features from the "Configuration" chapter. If you have more than 3 uncommented features, choose different indexes and re-execute plot3() cell.
 
 * Choose your features carefully. 
-It's always better to experiment and play with different features subsets (uncommented in "Configuration" chapter). Clustering is very sensitive to feature selection. 
+It is always better to experiment and play with different features subsets (uncommented in "Configuration" chapter). Clustering is very sensitive to feature selection. 
 Different attacks might have different distinguishable features. 
 If you change your features selection in "Configuration" chapter, you must re-execute the "Configuration", "Load Data", and "Clustering" chapters. 
 
 * Double clustering.
-In some cases DBSCAN clustering is not good enough. The suspected cluster might have a weird shape and even contain two different botnets. In order to further divide such a cluster you can use the second iteration, which we call "Double Clustering". You should choose the target cluster after the first clustering, as well as the number of clusters for K-Means clustering algorithm.  
+In some cases DBSCAN clustering is not good enough. The suspected cluster might have a weird shape and even contain two different botnets. In order to further divide such a cluster, you can use the second iteration, which we call "Double Clustering". You should choose the target cluster after the first clustering, as well as the number of clusters for K-Means clustering algorithm.  
 The second cell in this chapter is the same plot3() function which displays a 3D scatter plot of double clustering.
 
 ```python
 plot3([0,1,3], X2, clusters2, [])
 ```
-Note, that you should use X2 and clusters2 arguments.
+Note that you should use X2 and clusters2 arguments.
 
 ## Attack saving
 * Choose your attack ID(s).
@@ -184,7 +184,7 @@ Attack IDs are arbitrary numbers you assign to each botnet. The attack is identi
 It is possible to have more than one attack in a single incident. 
 
 * Modify the tools.label\_attack() function arguments  
-If you have more than 1 attack number to save, you should add a call to the label/attack() function for every attack.  
+If you have more than one attack number to save, you should add a call to the label/attack() function for every attack.  
 For example, for attack #1 you choose cluster #3:  
 ```python 
 tools.label_attack(id_incident, attack_number = 1, selected_clusters = [3], selected_clusters2 = [])  
@@ -215,7 +215,7 @@ If two attacks share a significant portion of identical IPs, they are likely to 
 plot_intersection(clusters, num_clusters, id_incident, ips, id_incident2 = ..., attack2 = -1)  
 ```
 
-This function will create a bar plot highlighting portions of the clusters which share identical IPs with another incident (specified by variable id_incident2). It's also possible to specify a particular attack index.
+This function will create a bar plot highlighting portions of the clusters which share identical IPs with another incident (specified by variable id_incident2). It is also possible to specify a particular attack index.
 
 ## Countries
 This graph explores the country distribution over the clusters. 
