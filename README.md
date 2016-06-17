@@ -64,9 +64,15 @@ pip install -r requirements.txt
 ## Configuration 
 You need to create a configuration file bothound.yaml
 
-1. Make a copy of the [example configuration file](conf/rename_me_to_bothound.yaml)  
-2. Rename the copy to bothound.yaml  
-3. Update the file with your credentials 
+* Make a copy of the [example configuration file](conf/rename_me_to_bothound.yaml)  
+* Rename the copy to bothound.yaml  
+* Update the file with your credentials.
+
+Bothoung.yaml description:
+* encryption_passphrase - the password for IP encryption  
+* hash_passphrase - the solt for hash function used for IP hash, stored in the database  
+* sniffles section - not supported yet  
+* elastic_db - Elastic search node credentials
 	
 # Initialization
 
