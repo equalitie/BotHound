@@ -19,7 +19,7 @@ The following libraries should be installed:
 
 ```  
 [sudo] apt-get install emacs python libmysqlclient-dev build-essential python-dev python-numpy python-setuptools python-scipy libatlas-dev python-matplotlib python-mysqldb python-geoip libffi-dev python-dnspython libssl-dev python-zmq   
-[sudo] apt-get install easy_install pip  
+[sudo] apt-get install python-pip
 [sudo] pip install -U scikit-learn  
 [sudo] apt-get install git  
 [sudo] apt-get install openjdk-7-jre
