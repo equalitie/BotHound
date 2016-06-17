@@ -244,15 +244,15 @@ class BothoundTools():
             if(country_code in ids):
                 features[feature_index] = ids[country_code]
             else:
+                country_name = country_code
+                cc = None
                 try:
-                    c = pycountry.countries.get(alpha2=country_code)
+                    cc = pycountry.countries.get(alpha2=country_code)
+                    country_name = cc.name.encode('ascii','ignore')
                 except KeyError:
-                    continue
-                
-                country_name = ""
-                if (c is not None):
-                    country_name = c.name.encode('ascii','ignore')
-                self.cur.execute("insert into countries(code, name) values ('{}', '{}')".format(country_code, country_name))
+                    country_name = country_code
+
+                self.cur.execute("insert into countries(code, name) values (%s, %s)", [country_code, country_name])
                 ids[country_code] = self.cur.lastrowid
                 features[feature_index] = self.cur.lastrowid
                 self.db.commit()
@@ -321,7 +321,7 @@ class BothoundTools():
 
             except Exception,e:
                 g = 0
-                pdb.set_trace()
+                print e
 
         # update encryption key for this incident
         key_hash = hashlib.sha256(self.db_encryption_key).digest()
@@ -330,11 +330,13 @@ class BothoundTools():
         id_key = 1
         #pdb.set_trace()
         if(len(ids)) > 0: 
-            id_key = ids[0]
+            id_key = ids[0]['id']
         else:
-            self.cur.execute("insert INTO encryption (id, key_hash) VALUES(%s,%s)", 0, key_hash) 
+            self.cur.execute("insert INTO encryption (id, key_hash) VALUES(%s,%s)", [0, key_hash]) 
             id_key = self.cur.lastrowid
-        self.cur.execute("update incidents set id_encryption=%s WHERE id = %s",id_key,id_incident)
+        print "id_key", id_key
+        print "id_incident", id_incident
+        self.cur.execute("update incidents set id_encryption=%s WHERE id = %s",[id_key,id_incident])
 
         self.db.commit()
 
