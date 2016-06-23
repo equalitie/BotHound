@@ -378,7 +378,7 @@ class BothoundTools():
 
 
     def get_ips(self, id_incident, attack = -1):
-        if cluster_index >= 0 :
+        if attack >= 0 :
             self.cur.execute("select DISTINCT IP from sessions WHERE id_incident = {} "
                 "and attack = {}".format(id_incident, attack))
         else:
