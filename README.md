@@ -23,8 +23,10 @@ The following libraries should be installed:
 [sudo] pip install -U scikit-learn  
 [sudo] apt-get install git  
 [sudo] apt-get install openjdk-7-jre
+[sudo] apt-get install mysql-server
  ```  
- 
+## Adminer
+Install [Adminer](https://www.adminer.org/) interface  
 
 ## Jupyter
 * First make sure that you install Jupyter locally because nbextension has a bug and is only able to install if there is a local installation.  
@@ -77,13 +79,18 @@ Bothoung.yaml description:
 # Initialization
 
 ## Creating a database
-To create a database, you need to launch any script which instantiates bothound\_tools object, for example:  
+* Make sure Mysql server is up and running.  
+* To create a database, you need to launch any script which instantiates bothound\_tools object, for example:  
 ```
 cd src  
 python session_computer.py  
 ```
-
-Make sure the database and the tables are created successfully.
+Make sure the database and the tables are created successfully.  
+* Create a test incident using the followin sql :  
+```
+INSERT INTO incidents (start,stop,process,target) VALUES (2016-06-01, 2016-06-02, 1, 'mysite.com');
+```
+* Run session_computer.py again. Make sure bothound is processing data from elastic search server. You should see the following message if the testing incident is processed correctly : "Incident 1 processed"
 
 ## Running Jupyter
 1. Make sure the Jupyter instance is running on the Bothound server. 
@@ -93,7 +100,7 @@ jupyter notebook --no-browser --port=8889
 ```
 2. Establish a tunnel to the Jupyter instance from your local computer:  
 ```
-ssh -N -L 8889:127.0.0.1:8889 anton@bothound.deflect.ca
+ssh -N -L 8889:127.0.0.1:8889 user@server
 ```
 3. Open the local URL [http://localhost:8889/](http://localhost:8889/).
 Make sure you see a list of files and folders.
