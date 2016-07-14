@@ -46,7 +46,7 @@ pip install https://github.com/ipython-contrib/IPython-notebook-extensions/archi
 
 * The file is erroneously copied in the local folder. Copy the files to the system-wide folder.  
 ```
-sudo cp /root/.local/share/jupyter /usr/local/share  
+sudo cp -R /root/.local/share/jupyter /usr/local/share/
 sudo chmod -R a+r /usr/local/share/jupyter 
 ```
 
