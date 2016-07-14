@@ -34,8 +34,6 @@ class LogFetcher(threading.Thread):
     def subscription(self, zmq_message):
         try:
             action, encrypted_message = zmq_message;
-            print action
-            print encrypted_message
 
             #decrypt the message here
             zmq_iv = encrypted_message[0:12]
@@ -44,7 +42,7 @@ class LogFetcher(threading.Thread):
             zmq_decrypted = decrypt(self.hashed_key, "", zmq_iv, zmq_cipher, zmq_tag)
     
             message = zmq_decrypted 
-            logging.debug("decrypted message: %s"%message)
+            #logging.debug("decrypted message: %s"%message)
             return self.process_received_message(action, message);
         except:
             logging.error("Invalid message: %s"%zmq_message)

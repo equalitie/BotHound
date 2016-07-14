@@ -17,6 +17,7 @@ from os.path import dirname, abspath
 import os
 import sys
 import yaml,pdb
+import time
 
 try:
 	src_dir = dirname(dirname(abspath(__file__)))
@@ -53,13 +54,13 @@ from features.src.feature_variance_request_interval import FeatureVarianceReques
 from training_set import TrainingSet
 
 from util.es_handler import ESHandler
-
 from bothound_tools import BothoundTools
+from threading import Thread
 
 nb_training = 10
 training_portions = [x / float(nb_training) for x in range(1, nb_training)]
 
-class SessionExtractor():
+class SessionComputer(Thread):
 	"""
 	This class read the db for the time of the attack from the database
 	and compute the sessions for the chosen incidents
@@ -68,6 +69,8 @@ class SessionExtractor():
 		"""
 		store the exp config in self's attribute.
 		"""
+		Thread.__init__(self)
+		self.daemon = True
 		utc_datetime = datetime.utcnow()
 		self.bothound_tools = bothound_tools
 		self.es_handler = ESHandler(self.bothound_tools.es_user, self.bothound_tools.es_password,
@@ -130,13 +133,13 @@ class SessionExtractor():
 		print "Incident {} processed.".format(incident['id'])
 		return ip_feature_db
 
-	def extract(self):
+	def compute_incidents(self):
 		"""
 		check all incidents which needs to be processed and compute the features on them
 		finally store the sessions in the db
 		"""
 		#this make more sense to happens in the constructor however,
-		for incident in bothound_tools.get_incidents(process = True):
+		for incident in self.bothound_tools.get_incidents(process = True):
 			cur_session_feature_db = self.process_incident(incident)
 		
 
@@ -144,6 +147,14 @@ class SessionExtractor():
 		# Add the result to the database
 		for cur_sesion in session_feature_db:
 			db_tools.store(cur_session)
+
+	def run(self):
+		print "Running SessionComputer..."
+		while True:
+			self.compute_incidents()
+			time.sleep(10)
+
+		print "Exit session computer."
 
 
 if __name__ == "__main__":
@@ -154,6 +165,8 @@ if __name__ == "__main__":
 	bothound_tools = BothoundTools(conf)
 	bothound_tools.connect_to_db()
 
-	session_extractor = SessionExtractor(bothound_tools)
-	session_extractor.extract()
+	session_computer = SessionComputer(bothound_tools)
+	session_computer.start()
 
+	while True:
+		pass

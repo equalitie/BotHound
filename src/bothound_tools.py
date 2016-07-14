@@ -18,6 +18,8 @@ from util.crypto import decrypt
 import pdb
 import sys
 from sklearn import preprocessing
+import datetime
+import calendar
 
 class BothoundTools():
     def connect_to_db(self):
@@ -399,9 +401,12 @@ class BothoundTools():
         self.db.commit()
 
     def get_incidents(self, process):
+        self.db.ping()
         self.cur.execute("select * from incidents WHERE "
         "cast(process as unsigned) = %d" % (1 if process else 0))
-        return [dict(elem) for elem in self.cur.fetchall()]
+        res = [dict(elem) for elem in self.cur.fetchall()]
+        self.db.commit()
+        return res
 
     def get_incident(self, id):
         self.cur.execute("select * from incidents WHERE id = %d" % id)
@@ -968,6 +973,16 @@ class BothoundTools():
             print "------ botnet", attack
             for i in range(0,n):
                 print names[cur_countries[i][0]], cur_countries[i][1]
+
+    def add_incident(self, start_date, target_host, duration_in_minutes = 60,  process = 1, comment = "") :
+
+        stop_date = start_date + datetime.timedelta(minutes=duration_in_minutes)
+
+        sql = "INSERT INTO incidents (start,stop,process,target,comment) VALUES (%s, %s, %s, %s, %s)"
+        self.db.ping()
+        self.cur.execute(sql,[start_date, stop_date, process, target_host, comment]) 
+        self.db.commit()
+
 
     def __init__(self, conf):
         #we would like people to able to use the tool object even

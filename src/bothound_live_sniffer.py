@@ -34,6 +34,8 @@ from util.ats_record import ATSRecord
 from logfetcher import LogFetcher
 
 from collections import OrderedDict
+import datetime
+import calendar
 
 # Gets the instance of the logger.
 logging = logging.getLogger("fail2ban.filter")
@@ -48,8 +50,9 @@ class BothoundLiveSniffer(LogFetcher):
     pre_anomaly_history = 10 * 60 #seconds
     MAX_LOG_DB_SIZE = 1000000 #maximum number of ats record in memory
     DEAD_SESSION_PAUSE = 10*60*3 #minimum number of seconds between two session
-    
-    def __init__(self, conf_options):
+
+    def __init__(self, conf_options, tools):
+        self.tools = tools
         """
         Calls the parent constructor then initializes a ip_dictionary
         """
@@ -119,29 +122,35 @@ class BothoundLiveSniffer(LogFetcher):
         return self._clusterify(cur_log_rec)
 
     def _process_greymemory_info(self, message):
-        print message
-        print str(message)
+        #print message
+        #print str(message)
         logging.debug("greymemory says " + "," + str(message))
+        #print "greymemory says " + "," + str(message)
 
         try:
             decoded_message = json.loads(message)        
             if(decoded_message['message type'] == 'anomaly_started') :
-                self._start_recording()
+                self._start_recording(decoded_message)
             elif(decoded_message['message type'] == 'anomaly_stopped') :
-                self._stop_recording()
+                self._stop_recording(decoded_message)
 
-        except:
+        except Exception,e:
             logging.error("Failed to decode the greymemory message")
+            print e
             return False
 
         return True
 
-    def _start_recording(self):
-        print "_start_recording"
-        pass
+    def _start_recording(self, message):
+        #print "Creating incident"
+        start_date = datetime.datetime.fromtimestamp(message["time_stamp"])
+        print "New incident : " + message["target_host"] + ", " + start_date.strftime("%Y-%m-%d %H:%M:%S")
+        if(message["target_host"] == "test_host"):
+            return
+        self.tools.add_incident(start_date, message["target_host"])
 
-    def _stop_recording(self):        
-        print "_stop_recording"
+    def _stop_recording(self, message):        
+        #print "_stop_recording"
         pass
 
     def _gather_all_features(self, cur_rec_dict):
