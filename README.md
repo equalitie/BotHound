@@ -24,6 +24,7 @@ The following libraries should be installed:
 [sudo] apt-get install git  
 [sudo] apt-get install openjdk-7-jre
 [sudo] apt-get install mysql-server
+[sudo] apt-get install ant
  ```  
 ## Adminer
 Install [Adminer](https://www.adminer.org/) interface  
@@ -68,29 +69,76 @@ You need to create a configuration file bothound.yaml
 
 * Make a copy of the [example configuration file](conf/rename_me_to_bothound.yaml)  
 * Rename the copy to bothound.yaml  
-* Update the file with your credentials.
+* Update the file with your credentials.  
 
-Bothoung.yaml description:
-* encryption_passphrase - the password for IP encryption  
-* hash_passphrase - the solt for hash function used for IP hash, stored in the database  
+Bothoung.yaml description:  
+
+* encryption\_passphrase - the password for IP encryption  
+* hash\_passphrase - the solt for hash function used for IP hash, stored in the database  
 * sniffles section - not supported yet  
-* elastic_db - Elastic search node credentials
+* elastic\_db - Elastic search node credentials  
 	
+## Greymemory installation
+* Build greymemory using the following script:  
+```
+sh build\_greymemory.sh
+```  
+
+The script will get the source code from github and build the source code using ant.
+Make sure the build is successfull and subfolder "greymemory/greymemory.AnomalyDetector/dist" contains greymemory.AnomalyDetector.jar.
+* rename greymemory/greymemory.AnomalyDetector/rename\_me\_to\_AnomalyDetector.config to AnomalyDetector.config  
+
+## Greymemory configuration
+Greymemory monitors the rate of successful http requests for every protected host.
+To calculate this rate Greymemory sends two request to ElasticSearch: 1) to get the total number of successful http request, and 2) to get the total number of failed http requests. The rate is calculated every 2 minutes by default. Every time the new rate is calculated Greymemory calculates the corresponding anomaly rate for the new value. If this anomaly rate is greater than a threshold, an anomaly is reported to bothound. Bothound creates a new incident for the corresponding host.
+
+File greymemory/greymemory.AnomalyDetector/AnomalyDetector.config contains greymemory configuration:  
+
+* threshold - the threshold value of anomaly rate(default is 0.95)  
+* sample\_rate\_in\_minutes - the sampling rate (default is 2 minutes)  
+* es\_host, es\_port, es\_user, es\_password - Elastic Search credentials  
+* mail\_alert1, mail\_alert2,... - emails for anomaly notifications  
+* target\_host1, target\_host2=... - the hosts being monitored. Don't use "www."   
+
 # Initialization
 
 ## Creating a database
 * Make sure Mysql server is up and running.  
-* To create a database, you need to launch any script which instantiates bothound\_tools object, for example:  
+* To create a database, you just need to launch bothound :  
 ```
-cd src  
-python session_computer.py  
+python src/bothound.py  
 ```
 Make sure the database and the tables are created successfully.  
 * Create a test incident using the followin sql :  
 ```
 INSERT INTO incidents (start,stop,process,target) VALUES (2016-06-01, 2016-06-02, 1, 'mysite.com');
 ```
-* Run session_computer.py again. Make sure bothound is processing data from elastic search server. You should see the following message if the testing incident is processed correctly : "Incident 1 processed"
+* Make sure bothound is processing data from elastic search server. You should see the following message if the testing incident is processed correctly : "Incident 1 processed"
+
+## Establish ZMQ relay
+ZMQ relay script provides communication channel between Greymemory and Bothound. Bothound uses TCP socket to connect to the relay. The relay uses encrypted ZMQ messages to communicate to Bothound. This design enables to scale the system and run multiple instances of Greymemory.
+To run the relay:  
+```
+python src/util/socket2zmq.py
+```  
+Make sure you see the message "Listening on port ... , relayint to ZMQ port ..."
+
+## Test Greymemory
+To run greymemory :  
+```
+cd ./greymemory/greymemory.AnomalyDetector
+sh anomaly_detector.sh
+```  
+Make sure you see a test anomaly message in bothound console : "New incident : test_host, ..."
+
+# Running
+
+## Running Bothound
+The following scripts are created to simply the launch procedure. Launch in any order:  
+
+* bothound.sh  
+* greymemory.sh  
+* relay.sh  
 
 ## Running Jupyter
 1. Make sure the Jupyter instance is running on the Bothound server. 

@@ -1,0 +1,2 @@
+cd greymemory/greymemory.AnomalyDetector
+sh anomaly_detector.sh
