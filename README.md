@@ -181,15 +181,11 @@ Use Shift+Enter to execute a cell.
 You can fold/unfold the content of a cell using the left "arrow" key.
 
 # Sessions
-## Session Computer
-The Session Computer calculates sessions for all the records in the incidents table containing "1" in the "Process" field.
 
-* Run the Session Computer with: 
-```
-python session_computer.py
-```   
-* The Session Computer will recalculate all the incident records containing "1" in the "Process" field.
-* For regular incidents, the Session Computer runs ElasticSearch queries. For nginx incidents, the Session Computer will parse the corresponding log file.
+Bothound calculates sessions for all the records in the incidents table containing "1" in the "Process" field. 
+* Bothound monitors records in INCIDETNS table. 
+* Bothound recalculates sessions for all the records from "Incident" table containing "1" in the "Process" field. 
+* For regular incidents, the Bothound runs ElasticSearch queries. For nginx incidents, the Bothound will parse the corresponding log file.
 * The sessions will be stored in the "sessions" table.
 
 ## IP Encryption
