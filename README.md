@@ -18,11 +18,13 @@ Python 2.7 should be installed
 The following libraries should be installed:  
 
 ```  
+[sudo] deb http://http.debian.net/debian jessie-backports main
+[sudo] apt-get update
 [sudo] apt-get install emacs python libmysqlclient-dev build-essential python-dev python-numpy python-setuptools python-scipy libatlas-dev python-matplotlib python-mysqldb python-geoip libffi-dev python-dnspython libssl-dev python-zmq   
 [sudo] apt-get install python-pip
 [sudo] pip install -U scikit-learn  
 [sudo] apt-get install git  
-[sudo] apt-get install openjdk-7-jre
+[sudo] apt-get install openjdk-8-jre
 [sudo] apt-get install mysql-server
 [sudo] apt-get install ant
  ```  
@@ -32,6 +34,7 @@ Install [Adminer](https://www.adminer.org/) interface
 ## Jupyter
 * First make sure that you install Jupyter locally because nbextension has a bug and is only able to install if there is a local installation.  
 ``` 
+suso pip install jupyter_contrib_core
 sudo pip install jupyter --user
 ```
 
