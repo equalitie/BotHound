@@ -15,11 +15,16 @@ Bothound's role is to detect and classify the attacks (incidents), using the ano
 Python 2.7 should be installed
 
 ## Libraries
+
+First add the Jessie backports repository to `/etc/apt/sources.list`:
+
+    deb http://http.debian.net/debian jessie-backports main
+
+and run `apt-get update`.
+
 The following libraries should be installed:  
 
 ```  
-[sudo] deb http://http.debian.net/debian jessie-backports main
-[sudo] apt-get update
 [sudo] apt-get install emacs python libmysqlclient-dev build-essential python-dev python-numpy python-setuptools python-scipy libatlas-dev python-matplotlib python-mysqldb python-geoip libffi-dev python-dnspython libssl-dev python-zmq   
 [sudo] apt-get install python-pip
 [sudo] pip install -U scikit-learn  
