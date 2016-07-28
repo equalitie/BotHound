@@ -90,7 +90,7 @@ Bothoung.yaml description:
 ## Greymemory installation
 * Build greymemory using the following script:  
 ```
-sh build\_greymemory.sh
+sh build_greymemory.sh
 ```  
 
 The script will get the source code from github and build the source code using ant.
