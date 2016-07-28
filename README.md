@@ -30,7 +30,7 @@ The following libraries should be installed:
 [sudo] pip install -U scikit-learn  
 [sudo] apt-get install python-twisted
 [sudo] apt-get install git  
-[sudo] apt-get install openjdk-8-jre
+[sudo] apt-get install openjdk-8-jre openjdk-8-jdk
 [sudo] apt-get install mysql-server
 [sudo] apt-get install ant
  ```  
