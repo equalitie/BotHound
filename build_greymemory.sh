@@ -6,7 +6,7 @@ git clone https://github.com/GreyMemory/greymemory.AnomalyDetector
 
 cd ./greymemory.AnomalyDetector
 
-sudo sh runme.sh
+sh runme.sh
 
 cd ../..
 
