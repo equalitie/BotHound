@@ -477,7 +477,7 @@ if __name__ == "__main__":
 
 	#id_incidents = [24,25,26,19,27]
 	#id_incidents = [29,30,31,32,33,34]
-	id_incidents = [29,30,42,31,32,33,34]
+	id_incidents = [50,51,52,53,54]
 
 	#bothound_tools.calculate_attack_metrics(id_incidents)
 
@@ -486,16 +486,17 @@ if __name__ == "__main__":
 	#bothound_tools.calculate_distances(id_incident = 29, id_attack = 1, cluster_indexes1 = [], cluster_indexes2 = [], 
 	#	id_incidents = [29,30,31,32,33,34,36,37,39,40,42], features = [])
 
-	#bothound_tools.calculate_common_ips([29,30,31,32,33,34], 1, [36,37,39,40])
+	bothound_tools.calculate_common_ips([50], 8, [50,51,52,53,54])
 
-	bothound_tools.incidents_summary(id_incidents)
+	#bothound_tools.incidents_summary(id_incidents)
 
-	attacks = bothound_tools.get_attacks(id_incidents) # show attack count
-	for a in attacks:
-		print a
+	#attacks = bothound_tools.get_attacks(id_incidents) # show attack count
+	#for a in attacks:
+	#	print a
 
 	#bothound_tools.get_top_attack_countries(id_incidents)
 
+	#print id_incidents
 	#bothound_tools.extract_attack_ips(id_incidents)
 
 	#analytics.calculate_intersection_with_file(id_incidents, 
@@ -520,7 +521,7 @@ if __name__ == "__main__":
 
 	#analytics.calculate_pingback_domains(id_incidents)
 
-	analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wordpress_ips.deny", "./btselem/bds_vs_btselem_wordpress_ips.txt")
+	#analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wordpress_ips.deny", "./btselem/bds_vs_btselem_wordpress_ips.txt")
 	#analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_stupid.deny", "./btselem/bds_vs_btselem_stupid.txt")
 	#analytics.calculate_intersection_with_file([29,30,31,32,33,34], "./btselem/btselem_wp_20150515-00_ips.deny", "./btselem/bds_vs_btselem_wp_20150515-00_ips.txt")
 
