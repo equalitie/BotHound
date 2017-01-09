@@ -80,7 +80,7 @@ You need to create a configuration file bothound.yaml
 * Rename the copy to bothound.yaml  
 * Update the file with your credentials.  
 
-Bothoung.yaml description:  
+bothound.yaml description:  
 
 * encryption\_passphrase - the password for IP encryption  
 * hash\_passphrase - the solt for hash function used for IP hash, stored in the database  
