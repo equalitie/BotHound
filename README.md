@@ -40,7 +40,7 @@ Install [Adminer](https://www.adminer.org/) interface
 ## Jupyter
 * First make sure that you install Jupyter locally because nbextension has a bug and is only able to install if there is a local installation.  
 ``` 
-suso pip install jupyter_contrib_core
+sudo pip install jupyter_contrib_core
 sudo pip install jupyter --user
 ```
 
