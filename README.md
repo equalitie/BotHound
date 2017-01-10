@@ -34,6 +34,9 @@ The following libraries should be installed:
 [sudo] apt-get install mysql-server
 [sudo] apt-get install ant
  ```  
+When installing `openjdk-8-jre` and `openjdk-8-jdk`, make sure that version 7 is not installed.
+ 
+ 
 ## Adminer
 Install [Adminer](https://www.adminer.org/) interface  
 
